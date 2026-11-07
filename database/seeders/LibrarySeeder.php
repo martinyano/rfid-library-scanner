@@ -7,7 +7,6 @@ use App\Models\Author;
 use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\Category;
-use App\Models\Fine;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -294,7 +293,7 @@ class LibrarySeeder extends Seeder
             $elfili->decrement('available_copies');
         }
 
-        $anaLoan = Borrowing::query()->firstOrCreate(
+        Borrowing::query()->firstOrCreate(
             [
                 'user_id' => $ana->id,
                 'book_id' => $dekada->id,
@@ -305,20 +304,9 @@ class LibrarySeeder extends Seeder
                 'returned_at' => today()->subDays(4)->toDateString(),
                 'status' => 'returned',
                 'handled_by_id' => $admin->id,
-                'notes' => 'Returned with an overdue fine.',
+                'notes' => 'Returned late.',
             ]
         );
-        if ($anaLoan->wasRecentlyCreated) {
-            Fine::query()->create([
-                'borrowing_id' => $anaLoan->id,
-                'user_id' => $ana->id,
-                'type' => 'overdue',
-                'amount' => 30,
-                'days_overdue' => 3,
-                'status' => 'unpaid',
-                'notes' => 'Three days overdue at PHP 10 per day.',
-            ]);
-        }
 
         Borrowing::query()->firstOrCreate(
             [

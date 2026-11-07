@@ -46,8 +46,7 @@ class ReminderTest extends TestCase
         });
         Mail::assertSent(OverdueReminder::class, function (OverdueReminder $mail) use ($overdue) {
             return $mail->borrowing->id === $overdue->id
-                && $mail->daysOverdue === 4
-                && $mail->estimatedFine === 40.0;
+                && $mail->daysOverdue === 4;
         });
 
         $this->assertNotNull($dueSoon->fresh()->due_soon_notified_at);
@@ -70,8 +69,7 @@ class ReminderTest extends TestCase
         $this->assertStringContainsString($borrowing->book->title, $dueSoon);
         $this->assertStringContainsString('Test Library', $dueSoon);
 
-        $overdue = (new OverdueReminder($borrowing, 3, 30.0, 'Test Library'))->render();
-        $this->assertStringContainsString('30.00', $overdue);
+        $overdue = (new OverdueReminder($borrowing, 3, 'Test Library'))->render();
         $this->assertStringContainsString('Overdue book notice', $overdue);
     }
 

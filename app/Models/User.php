@@ -45,11 +45,6 @@ class User extends Authenticatable
         return $this->hasMany(Borrowing::class);
     }
 
-    public function fines(): HasMany
-    {
-        return $this->hasMany(Fine::class);
-    }
-
     public function attendanceLogs(): HasMany
     {
         return $this->hasMany(AttendanceLog::class);

@@ -84,7 +84,6 @@
                     <ul class="list-unstyled d-flex flex-column gap-3 mb-0 small">
                         <li class="d-flex gap-2"><i class="bi bi-calendar-range text-primary mt-1"></i><span>Loan period: <strong>{{ $borrowDays }} days</strong> from the date borrowed.</span></li>
                         <li class="d-flex gap-2"><i class="bi bi-stack text-primary mt-1"></i><span>Return the book at the library desk so the librarian can process the return.</span></li>
-                        <li class="d-flex gap-2"><i class="bi bi-cash-coin text-primary mt-1"></i><span>Late returns may incur a daily fine. Lost or damaged books also carry a fine.</span></li>
                         <li class="d-flex gap-2"><i class="bi bi-envelope text-primary mt-1"></i><span>Email reminders are sent before the due date and when a book is overdue.</span></li>
                     </ul>
                 </div>

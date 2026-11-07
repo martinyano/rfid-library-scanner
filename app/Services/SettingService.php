@@ -11,11 +11,7 @@ class SettingService
         'library_name' => 'RFID Library System',
         'borrow_days' => '7',
         'max_books' => '3',
-        'fine_per_day' => '10',
-        'lost_fee' => '500',
-        'damaged_fee' => '200',
         'due_soon_days' => '2',
-        'block_on_unpaid_fine' => '0',
         'auto_close_hours' => '12',
     ];
 

@@ -19,7 +19,7 @@
     </div>
 
     <div class="row g-3 mb-3">
-        <div class="col-6 col-xl-3">
+        <div class="col-6 col-xl-4">
             <div class="stat-card">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
@@ -31,7 +31,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-xl-3">
+        <div class="col-6 col-xl-4">
             <div class="stat-card">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
@@ -43,7 +43,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-xl-3">
+        <div class="col-6 col-xl-4">
             <div class="stat-card">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
@@ -52,18 +52,6 @@
                         <div class="small text-muted-library">Needs follow-up</div>
                     </div>
                     <div class="stat-icon bg-soft-danger"><i class="bi bi-exclamation-octagon"></i></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-xl-3">
-            <div class="stat-card">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="stat-label">Unpaid fines</div>
-                        <div class="stat-value">{{ number_format($unpaidFines, 2) }}</div>
-                        <div class="small text-muted-library">{{ config('library.currency') }} total</div>
-                    </div>
-                    <div class="stat-icon bg-soft-amber"><i class="bi bi-receipt"></i></div>
                 </div>
             </div>
         </div>

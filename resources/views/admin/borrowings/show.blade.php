@@ -67,54 +67,6 @@
                 </div>
             </div>
 
-            @if ($borrowing->fine)
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-receipt me-1"></i> Fine</span>
-                        <span class="badge {{ $borrowing->fine->status_badge }}">{{ ucfirst($borrowing->fine->status) }}</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3 small">
-                            <div class="col-md-4">
-                                <div class="text-muted-library">Type</div>
-                                <div class="fw-semibold">{{ $borrowing->fine->type_label }}</div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-muted-library">Amount</div>
-                                <div class="fw-semibold">{{ config('library.currency') }} {{ number_format((float) $borrowing->fine->amount, 2) }}</div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-muted-library">Days overdue</div>
-                                <div class="fw-semibold">{{ $borrowing->fine->days_overdue }}</div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-muted-library">Recorded</div>
-                                <div class="fw-semibold">{{ $borrowing->fine->created_at->format('M d, Y h:i A') }}</div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-muted-library">Paid at</div>
-                                <div class="fw-semibold">{{ $borrowing->fine->paid_at?->format('M d, Y h:i A') ?? '-' }}</div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-muted-library">Handled by</div>
-                                <div class="fw-semibold">{{ $borrowing->fine->handledBy?->name ?? '-' }}</div>
-                            </div>
-                        </div>
-                        @if ($borrowing->fine->status === 'unpaid')
-                            <div class="d-flex gap-2 mt-3">
-                                <form method="POST" action="{{ route('admin.fines.pay', $borrowing->fine) }}">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-cash-coin me-1"></i> Mark paid</button>
-                                </form>
-                                <form method="POST" action="{{ route('admin.fines.waive', $borrowing->fine) }}" onsubmit="return confirm('Waive this fine?');">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-light border"><i class="bi bi-slash-circle me-1"></i> Waive</button>
-                                </form>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            @endif
         </div>
 
         <div class="col-lg-4">
@@ -145,22 +97,12 @@
 
                         <form method="POST" action="{{ route('admin.borrowings.lost', $borrowing) }}" onsubmit="return confirm('Mark this book as lost?');">
                             @csrf
-                            <label for="lost_amount" class="form-label small fw-semibold">Report lost</label>
-                            <div class="input-group">
-                                <span class="input-group-text">{{ config('library.currency') }}</span>
-                                <input type="number" step="0.01" min="0" name="amount" id="lost_amount" class="form-control" value="{{ $lostFee }}">
-                                <button type="submit" class="btn btn-outline-danger">Lost</button>
-                            </div>
+                            <button type="submit" class="btn btn-outline-danger w-100"><i class="bi bi-question-octagon me-1"></i> Report lost</button>
                         </form>
 
                         <form method="POST" action="{{ route('admin.borrowings.damaged', $borrowing) }}" class="mt-3" onsubmit="return confirm('Mark this book as damaged?');">
                             @csrf
-                            <label for="damaged_amount" class="form-label small fw-semibold">Report damaged</label>
-                            <div class="input-group">
-                                <span class="input-group-text">{{ config('library.currency') }}</span>
-                                <input type="number" step="0.01" min="0" name="amount" id="damaged_amount" class="form-control" value="{{ $damagedFee }}">
-                                <button type="submit" class="btn btn-outline-warning">Damaged</button>
-                            </div>
+                            <button type="submit" class="btn btn-outline-warning w-100"><i class="bi bi-exclamation-triangle me-1"></i> Report damaged</button>
                         </form>
                     @else
                         <div class="text-center py-3">

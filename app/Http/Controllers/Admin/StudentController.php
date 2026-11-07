@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\AttendanceService;
-use App\Services\FineService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -65,18 +64,16 @@ class StudentController extends Controller
         return redirect()->route('admin.students.index')->with('success', 'Student registered successfully.');
     }
 
-    public function show(User $student, FineService $fines)
+    public function show(User $student)
     {
         $student->load([
             'borrowings' => fn ($query) => $query->with('book')->latest('borrowed_at'),
-            'fines' => fn ($query) => $query->with('borrowing.book')->latest(),
             'attendanceLogs' => fn ($query) => $query->latest('entry_at')->limit(20),
         ]);
 
         return view('admin.students.show', [
             'student' => $student,
             'activeLoans' => $student->borrowings->where('status', 'borrowed'),
-            'unpaidFines' => $fines->unpaidTotalFor($student),
         ]);
     }
 
@@ -113,7 +110,6 @@ class StudentController extends Controller
     public function destroy(User $student)
     {
         $hasRecords = $student->borrowings()->exists()
-            || $student->fines()->exists()
             || $student->attendanceLogs()->exists();
 
         if ($hasRecords) {

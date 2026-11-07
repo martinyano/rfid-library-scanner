@@ -37,16 +37,6 @@
                                 </tr>
                             </table>
 
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #fff5f5; border: 1px solid #f1c2c7; border-radius: 8px; margin-bottom: 20px;">
-                                <tr>
-                                    <td style="padding: 14px 18px;">
-                                        <div style="font-size: 12px; color: #842029; text-transform: uppercase; letter-spacing: 0.05em;">Estimated fine</div>
-                                        <div style="font-size: 22px; font-weight: bold; color: #b02a37;">{{ config('library.currency') }} {{ number_format($estimatedFine, 2) }}</div>
-                                        <div style="font-size: 12px; color: #842029;">The final amount is computed when the book is returned.</div>
-                                    </td>
-                                </tr>
-                            </table>
-
                             <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #4b5563;">
                                 Return the book at the library desk. If the book has been lost or damaged, please inform the librarian so the record can be updated.
                             </p>

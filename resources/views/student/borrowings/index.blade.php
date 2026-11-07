@@ -6,23 +6,13 @@
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">
         <div>
             <div class="text-muted-library small fw-semibold text-uppercase mb-1">My account</div>
-            <h1 class="h3 fw-bold mb-1">Borrowings and fines</h1>
-            <p class="text-muted-library mb-0">Track due dates, overdue books, and outstanding fines.</p>
+            <h1 class="h3 fw-bold mb-1">My borrowings</h1>
+            <p class="text-muted-library mb-0">Track due dates and overdue books.</p>
         </div>
         <a href="{{ route('student.dashboard') }}" class="btn btn-outline-primary">
             <i class="bi bi-search me-1"></i> Browse catalog
         </a>
     </div>
-
-    @if ($unpaidFines > 0)
-        <div class="alert alert-warning d-flex align-items-start gap-2">
-            <i class="bi bi-cash-coin mt-1"></i>
-            <div>
-                <strong>Unpaid fines: {{ config('library.currency') }} {{ number_format($unpaidFines, 2) }}</strong>
-                <div class="small">Please settle this amount at the library desk.</div>
-            </div>
-        </div>
-    @endif
 
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -38,7 +28,6 @@
                         <th>Due date</th>
                         <th>Time left</th>
                         <th>Status</th>
-                        <th class="text-end">Estimated fine</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -58,11 +47,10 @@
                                 @endif
                             </td>
                             <td><span class="badge {{ $loan->status_badge }}">{{ $loan->status_label }}</span></td>
-                            <td class="text-end small">{{ config('library.currency') }} {{ number_format($loan->estimated_fine, 2) }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6">
+                            <td colspan="5">
                                 <div class="empty-state py-4">
                                     <i class="bi bi-journal"></i>
                                     <div class="fw-semibold">No active loans</div>
@@ -76,47 +64,9 @@
         </div>
         @if ($activeLoans->isNotEmpty())
             <div class="card-footer bg-white small text-muted-library">
-                <i class="bi bi-info-circle me-1"></i> Return books at the library desk. The librarian will mark them as returned and compute any fines.
+                <i class="bi bi-info-circle me-1"></i> Return books at the library desk so the librarian can process the return.
             </div>
         @endif
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header"><i class="bi bi-receipt me-1"></i> Fines</div>
-        <div class="table-responsive">
-            <table class="table mb-0">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Book</th>
-                        <th>Type</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($fines as $fine)
-                        <tr>
-                            <td class="small">{{ $fine->created_at->format('M d, Y') }}</td>
-                            <td class="small">{{ $fine->borrowing?->book?->title ?? 'Deleted book' }}</td>
-                            <td class="small">{{ $fine->type_label }}</td>
-                            <td class="small fw-semibold">{{ config('library.currency') }} {{ number_format((float) $fine->amount, 2) }}</td>
-                            <td><span class="badge {{ $fine->status_badge }}">{{ ucfirst($fine->status) }}</span></td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5">
-                                <div class="empty-state py-4">
-                                    <i class="bi bi-emoji-smile"></i>
-                                    <div class="fw-semibold">No fines on record</div>
-                                    <div class="small">Keep returning books on time to keep it that way.</div>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
     </div>
 
     <div class="card">

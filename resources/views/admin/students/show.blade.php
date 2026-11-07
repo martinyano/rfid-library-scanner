@@ -42,10 +42,6 @@
                             <span class="text-muted-library">Phone</span>
                             <span class="fw-semibold">{{ $student->phone ?: '-' }}</span>
                         </div>
-                        <div class="col-12 d-flex justify-content-between py-2">
-                            <span class="text-muted-library">Unpaid fines</span>
-                            <span class="fw-semibold {{ $unpaidFines > 0 ? 'text-danger' : '' }}">{{ config('library.currency') }} {{ number_format($unpaidFines, 2) }}</span>
-                        </div>
                     </div>
                     <div class="d-flex gap-2 mt-4">
                         <a href="{{ route('admin.students.edit', $student) }}" class="btn btn-primary btn-sm"><i class="bi bi-pencil me-1"></i> Edit student</a>
@@ -89,7 +85,7 @@
     </div>
 
     <div class="row g-4">
-        <div class="col-lg-6">
+        <div class="col-12">
             <div class="card h-100">
                 <div class="card-header"><i class="bi bi-clock-history me-1"></i> Borrowing history</div>
                 <div class="table-responsive">
@@ -105,28 +101,6 @@
                                 </tr>
                             @empty
                                 <tr><td colspan="4" class="text-center text-muted-library py-4">No borrowing history.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card h-100">
-                <div class="card-header"><i class="bi bi-receipt me-1"></i> Fines</div>
-                <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead><tr><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
-                        <tbody>
-                            @forelse ($student->fines as $fine)
-                                <tr>
-                                    <td class="small">{{ $fine->type_label }}</td>
-                                    <td class="small fw-semibold">{{ config('library.currency') }} {{ number_format((float) $fine->amount, 2) }}</td>
-                                    <td><span class="badge {{ $fine->status_badge }}">{{ ucfirst($fine->status) }}</span></td>
-                                    <td class="small">{{ $fine->created_at->format('M d, Y') }}</td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="4" class="text-center text-muted-library py-4">No fines on record.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

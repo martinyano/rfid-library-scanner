@@ -7,13 +7,12 @@ use App\Models\Author;
 use App\Models\Book;
 use App\Models\Category;
 use App\Services\BorrowingService;
-use App\Services\FineService;
 use App\Services\SettingService;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, BorrowingService $borrowings, FineService $fines, SettingService $settings)
+    public function __invoke(Request $request, BorrowingService $borrowings, SettingService $settings)
     {
         $student = $request->user();
 
@@ -40,8 +39,6 @@ class DashboardController extends Controller
             'activeLoanCount' => $activeLoans->count(),
             'maxBooks' => $settings->int('max_books', 3),
             'borrowDays' => $settings->int('borrow_days', 7),
-            'unpaidFines' => $fines->unpaidTotalFor($student),
-            'borrowingBlocked' => $settings->bool('block_on_unpaid_fine') && $fines->hasUnpaidFines($student),
             'activeCount' => $borrowings->activeCount($student),
         ]);
     }

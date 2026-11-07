@@ -5,7 +5,7 @@
 @section('content')
     <div class="mb-4">
         <h1 class="admin-page-title h3 mb-1">Library settings</h1>
-        <p class="text-muted-library mb-0">Borrowing rules, fines, reminders, and attendance behavior.</p>
+        <p class="text-muted-library mb-0">Borrowing rules, reminders, and attendance behavior.</p>
     </div>
 
     <form method="POST" action="{{ route('admin.settings.update') }}">
@@ -35,36 +35,6 @@
                                 <label for="max_books" class="form-label small fw-semibold">Maximum active loans per student</label>
                                 <input type="number" name="max_books" id="max_books" value="{{ old('max_books', $settings['max_books']) }}" min="1" max="20" class="form-control @error('max_books') is-invalid @enderror" required>
                                 @error('max_books')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-                            <div class="col-12">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch" name="block_on_unpaid_fine" id="block_on_unpaid_fine" value="1" @checked(old('block_on_unpaid_fine', $settings['block_on_unpaid_fine']) == '1')>
-                                    <label class="form-check-label small fw-semibold" for="block_on_unpaid_fine">Block borrowing when a student has unpaid fines</label>
-                                </div>
-                                <div class="form-text">When off, students may still borrow and settle fines later.</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mb-4">
-                    <div class="card-header"><i class="bi bi-cash-coin me-1"></i> Fines</div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label for="fine_per_day" class="form-label small fw-semibold">Overdue fine per day ({{ config('library.currency') }})</label>
-                                <input type="number" step="0.01" name="fine_per_day" id="fine_per_day" value="{{ old('fine_per_day', $settings['fine_per_day']) }}" min="0" max="10000" class="form-control @error('fine_per_day') is-invalid @enderror" required>
-                                @error('fine_per_day')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-                            <div class="col-md-4">
-                                <label for="lost_fee" class="form-label small fw-semibold">Lost book fee ({{ config('library.currency') }})</label>
-                                <input type="number" step="0.01" name="lost_fee" id="lost_fee" value="{{ old('lost_fee', $settings['lost_fee']) }}" min="0" max="100000" class="form-control @error('lost_fee') is-invalid @enderror" required>
-                                @error('lost_fee')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-                            <div class="col-md-4">
-                                <label for="damaged_fee" class="form-label small fw-semibold">Damaged book fee ({{ config('library.currency') }})</label>
-                                <input type="number" step="0.01" name="damaged_fee" id="damaged_fee" value="{{ old('damaged_fee', $settings['damaged_fee']) }}" min="0" max="100000" class="form-control @error('damaged_fee') is-invalid @enderror" required>
-                                @error('damaged_fee')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
                     </div>

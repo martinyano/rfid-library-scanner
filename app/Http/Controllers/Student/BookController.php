@@ -5,13 +5,12 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\Book;
 use App\Services\BorrowingService;
-use App\Services\FineService;
 use App\Services\SettingService;
 use Illuminate\Http\Request;
 
 class BookController extends Controller
 {
-    public function show(Request $request, Book $book, BorrowingService $borrowings, FineService $fines, SettingService $settings)
+    public function show(Request $request, Book $book, BorrowingService $borrowings, SettingService $settings)
     {
         $book->load(['author', 'category']);
 
@@ -25,7 +24,6 @@ class BookController extends Controller
             'activeCount' => $borrowings->activeCount($request->user()),
             'maxBooks' => $settings->int('max_books', 3),
             'borrowDays' => $settings->int('borrow_days', 7),
-            'unpaidFines' => $fines->unpaidTotalFor($request->user()),
         ]);
     }
 

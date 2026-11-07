@@ -16,9 +16,6 @@
     <a class="nav-link {{ request()->routeIs('admin.borrowings.*') ? 'active' : '' }}" href="{{ route('admin.borrowings.index') }}">
         <i class="bi bi-arrow-left-right"></i> Borrowings
     </a>
-    <a class="nav-link {{ request()->routeIs('admin.fines.*') ? 'active' : '' }}" href="{{ route('admin.fines.index') }}">
-        <i class="bi bi-cash-coin"></i> Fines
-    </a>
     <a class="nav-link {{ request()->routeIs('admin.attendance.*') ? 'active' : '' }}" href="{{ route('admin.attendance.index') }}">
         <i class="bi bi-clock-history"></i> Attendance
     </a>

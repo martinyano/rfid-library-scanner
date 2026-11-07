@@ -71,7 +71,6 @@ class SendDueReminders extends Command
                 Mail::to($borrowing->user->email)->send(new OverdueReminder(
                     $borrowing,
                     $borrowing->overdue_days,
-                    $borrowing->estimated_fine,
                     $libraryName
                 ));
 

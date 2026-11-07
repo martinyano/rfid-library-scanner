@@ -44,22 +44,16 @@
             </div>
 
             <div class="row g-3 mb-4">
-                <div class="col-sm-4">
+                <div class="col-sm-6">
                     <div class="rule-pill h-100">
                         <div class="small text-muted-library">Loan period</div>
                         <strong>{{ $borrowDays }} days</strong>
                     </div>
                 </div>
-                <div class="col-sm-4">
+                <div class="col-sm-6">
                     <div class="rule-pill h-100">
                         <div class="small text-muted-library">Your active loans</div>
                         <strong>{{ $activeCount }} of {{ $maxBooks }}</strong>
-                    </div>
-                </div>
-                <div class="col-sm-4">
-                    <div class="rule-pill h-100">
-                        <div class="small text-muted-library">Unpaid fines</div>
-                        <strong>{{ config('library.currency') }} {{ number_format($unpaidFines, 2) }}</strong>
                     </div>
                 </div>
             </div>

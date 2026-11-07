@@ -79,7 +79,7 @@ class BorrowingTest extends TestCase
         $this->assertSame(1, Borrowing::query()->where('user_id', $student->id)->count());
     }
 
-    public function test_returning_an_overdue_book_creates_a_fine_and_restores_a_copy(): void
+    public function test_returning_an_overdue_book_restores_a_copy(): void
     {
         $admin = User::factory()->admin()->create();
         $student = User::factory()->student()->create();
@@ -99,18 +99,9 @@ class BorrowingTest extends TestCase
         $this->assertSame('returned', $borrowing->status);
         $this->assertNotNull($borrowing->returned_at);
         $this->assertSame(2, $book->fresh()->available_copies);
-
-        $this->assertDatabaseHas('fines', [
-            'borrowing_id' => $borrowing->id,
-            'user_id' => $student->id,
-            'type' => 'overdue',
-            'days_overdue' => 3,
-            'amount' => 30,
-            'status' => 'unpaid',
-        ]);
     }
 
-    public function test_returning_on_time_does_not_create_a_fine(): void
+    public function test_returning_on_time_marks_the_loan_as_returned(): void
     {
         $admin = User::factory()->admin()->create();
         $borrowing = Borrowing::factory()->create([
@@ -120,10 +111,10 @@ class BorrowingTest extends TestCase
 
         $this->actingAs($admin)->post(route('admin.borrowings.return', $borrowing))->assertRedirect();
 
-        $this->assertDatabaseCount('fines', 0);
+        $this->assertSame('returned', $borrowing->fresh()->status);
     }
 
-    public function test_admin_can_mark_a_book_lost_and_charge_the_configured_fee(): void
+    public function test_admin_can_mark_a_book_lost_and_remove_it_from_circulation(): void
     {
         $admin = User::factory()->admin()->create();
         $book = Book::factory()->create(['total_copies' => 2, 'available_copies' => 1]);
@@ -132,19 +123,12 @@ class BorrowingTest extends TestCase
             'status' => 'borrowed',
         ]);
 
-        $response = $this->actingAs($admin)->post(route('admin.borrowings.lost', $borrowing), [
-            'amount' => 250,
-        ]);
+        $response = $this->actingAs($admin)->post(route('admin.borrowings.lost', $borrowing));
 
         $response->assertRedirect();
         $this->assertSame('lost', $borrowing->fresh()->status);
         $this->assertSame(1, $book->fresh()->total_copies);
         $this->assertSame(1, $book->fresh()->available_copies);
-        $this->assertDatabaseHas('fines', [
-            'borrowing_id' => $borrowing->id,
-            'type' => 'lost',
-            'amount' => 250,
-        ]);
     }
 
     public function test_admin_can_extend_a_loan(): void

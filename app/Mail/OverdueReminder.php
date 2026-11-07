@@ -16,7 +16,6 @@ class OverdueReminder extends Mailable
     public function __construct(
         public Borrowing $borrowing,
         public int $daysOverdue,
-        public float $estimatedFine,
         public string $libraryName,
     ) {}
 

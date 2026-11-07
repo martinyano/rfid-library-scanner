@@ -113,8 +113,8 @@
                 <div class="card h-100">
                     <div class="card-body p-4">
                         <div class="stat-icon bg-soft-amber mb-3"><i class="bi bi-calendar-check"></i></div>
-                        <h3 class="h6 fw-bold">Borrowing and fines</h3>
-                        <p class="text-muted-library small mb-0">Automatic due dates, overdue tracking, and fines for late, lost, or damaged books.</p>
+                        <h3 class="h6 fw-bold">Borrowing and due dates</h3>
+                        <p class="text-muted-library small mb-0">Automatic due dates, overdue tracking, and lost or damaged book records.</p>
                     </div>
                 </div>
             </div>

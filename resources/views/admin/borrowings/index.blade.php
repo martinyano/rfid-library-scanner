@@ -58,9 +58,6 @@
                         <tr>
                             <td>
                                 <div class="fw-semibold small text-truncate" style="max-width: 240px;">{{ $borrowing->book?->title ?? 'Deleted book' }}</div>
-                                @if ($borrowing->fine)
-                                    <div class="small text-danger"><i class="bi bi-receipt me-1"></i>{{ config('library.currency') }} {{ number_format((float) $borrowing->fine->amount, 2) }} {{ $borrowing->fine->status }}</div>
-                                @endif
                             </td>
                             <td class="small">
                                 <a href="{{ route('admin.students.show', $borrowing->user) }}" class="text-dark fw-semibold">{{ $borrowing->user?->name ?? 'Deleted student' }}</a>

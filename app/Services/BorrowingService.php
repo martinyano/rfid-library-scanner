@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Book;
 use App\Models\Borrowing;
-use App\Models\Fine;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -13,7 +12,6 @@ class BorrowingService
 {
     public function __construct(
         private readonly SettingService $settings,
-        private readonly FineService $fines,
     ) {}
 
     public function activeCount(User $student): int
@@ -48,10 +46,6 @@ class BorrowingService
             return 'You already have an active loan for this book.';
         }
 
-        if ($this->settings->bool('block_on_unpaid_fine') && $this->fines->hasUnpaidFines($student)) {
-            return 'You have unpaid fines. Please settle them at the library desk.';
-        }
-
         return null;
     }
 
@@ -84,21 +78,18 @@ class BorrowingService
         });
     }
 
-    public function markReturned(Borrowing $borrowing, ?User $handledBy = null): ?Fine
+    public function markReturned(Borrowing $borrowing, ?User $handledBy = null): void
     {
-        return DB::transaction(function () use ($borrowing, $handledBy) {
+        DB::transaction(function () use ($borrowing, $handledBy) {
             $borrowing = Borrowing::query()->whereKey($borrowing->id)->lockForUpdate()->firstOrFail();
 
             if ($borrowing->status !== 'borrowed') {
                 throw ValidationException::withMessages(['borrowing' => 'This loan is no longer active.']);
             }
 
-            $returnedAt = today();
-            $daysLate = $this->daysLate($borrowing, $returnedAt);
-
             $borrowing->update([
                 'status' => 'returned',
-                'returned_at' => $returnedAt,
+                'returned_at' => today(),
                 'handled_by_id' => $handledBy?->id,
             ]);
 
@@ -109,14 +100,12 @@ class BorrowingService
                     'available_copies' => min($book->total_copies, $book->available_copies + 1),
                 ]);
             }
-
-            return $this->fines->overdueFine($borrowing, $daysLate, $handledBy);
         });
     }
 
-    public function markLost(Borrowing $borrowing, ?float $amount = null, ?User $handledBy = null): Fine
+    public function markLost(Borrowing $borrowing, ?User $handledBy = null): void
     {
-        return DB::transaction(function () use ($borrowing, $amount, $handledBy) {
+        DB::transaction(function () use ($borrowing, $handledBy) {
             $borrowing = Borrowing::query()->whereKey($borrowing->id)->lockForUpdate()->firstOrFail();
 
             if ($borrowing->status !== 'borrowed') {
@@ -130,14 +119,12 @@ class BorrowingService
             ]);
 
             $this->removeCopyFromCirculation($borrowing);
-
-            return $this->fines->lostFine($borrowing, $amount, $handledBy);
         });
     }
 
-    public function markDamaged(Borrowing $borrowing, ?float $amount = null, ?User $handledBy = null): Fine
+    public function markDamaged(Borrowing $borrowing, ?User $handledBy = null): void
     {
-        return DB::transaction(function () use ($borrowing, $amount, $handledBy) {
+        DB::transaction(function () use ($borrowing, $handledBy) {
             $borrowing = Borrowing::query()->whereKey($borrowing->id)->lockForUpdate()->firstOrFail();
 
             if ($borrowing->status !== 'borrowed') {
@@ -151,8 +138,6 @@ class BorrowingService
             ]);
 
             $this->removeCopyFromCirculation($borrowing);
-
-            return $this->fines->damagedFine($borrowing, $amount, $handledBy);
         });
     }
 
@@ -167,14 +152,6 @@ class BorrowingService
             'due_soon_notified_at' => null,
             'overdue_notified_at' => null,
         ]);
-    }
-
-    public function daysLate(Borrowing $borrowing, $returnedAt): int
-    {
-        $due = $borrowing->due_at->copy()->startOfDay();
-        $returned = $returnedAt->copy()->startOfDay();
-
-        return max(0, (int) floor(($returned->timestamp - $due->timestamp) / 86400));
     }
 
     private function removeCopyFromCirculation(Borrowing $borrowing): void

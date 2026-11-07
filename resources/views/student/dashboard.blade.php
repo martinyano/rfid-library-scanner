@@ -24,23 +24,8 @@
         </div>
     </div>
 
-    @if ($unpaidFines > 0)
-        <div class="alert alert-warning d-flex align-items-start gap-2" role="alert">
-            <i class="bi bi-cash-coin mt-1"></i>
-            <div>
-                <strong>Unpaid fines: {{ config('library.currency') }} {{ number_format($unpaidFines, 2) }}</strong>
-                <div class="small">
-                    Please settle outstanding fines at the library desk.
-                    @if ($borrowingBlocked)
-                        Borrowing is currently blocked until your fines are cleared.
-                    @endif
-                </div>
-            </div>
-        </div>
-    @endif
-
     <div class="row g-3 mb-4">
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-lg-4">
             <div class="stat-card">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
@@ -51,7 +36,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-lg-4">
             <div class="stat-card">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
@@ -62,7 +47,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-lg-4">
             <div class="stat-card">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
@@ -70,17 +55,6 @@
                         <div class="stat-value">{{ $borrowDays }} days</div>
                     </div>
                     <div class="stat-icon bg-soft-amber"><i class="bi bi-calendar-range"></i></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-lg-3">
-            <div class="stat-card">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="stat-label">Unpaid fines</div>
-                        <div class="stat-value">{{ number_format($unpaidFines, 2) }}</div>
-                    </div>
-                    <div class="stat-icon bg-soft-danger"><i class="bi bi-receipt"></i></div>
                 </div>
             </div>
         </div>

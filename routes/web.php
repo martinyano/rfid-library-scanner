@@ -7,7 +7,6 @@ use App\Http\Controllers\Admin\BookController as AdminBookController;
 use App\Http\Controllers\Admin\BorrowingController as AdminBorrowingController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\FineController as AdminFineController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Api\RfidScanController;
@@ -46,10 +45,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('borrowings/{borrowing}/lost', [AdminBorrowingController::class, 'markLost'])->name('borrowings.lost');
         Route::post('borrowings/{borrowing}/damaged', [AdminBorrowingController::class, 'markDamaged'])->name('borrowings.damaged');
         Route::post('borrowings/{borrowing}/extend', [AdminBorrowingController::class, 'extend'])->name('borrowings.extend');
-
-        Route::get('fines', [AdminFineController::class, 'index'])->name('fines.index');
-        Route::post('fines/{fine}/pay', [AdminFineController::class, 'pay'])->name('fines.pay');
-        Route::post('fines/{fine}/waive', [AdminFineController::class, 'waive'])->name('fines.waive');
 
         Route::get('attendance', [AdminAttendanceController::class, 'index'])->name('attendance.index');
         Route::post('attendance/{log}/close', [AdminAttendanceController::class, 'close'])->name('attendance.close');
