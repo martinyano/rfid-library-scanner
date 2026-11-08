@@ -6,10 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Author;
 use App\Models\Book;
 use App\Models\Category;
+use App\Services\BookCopyService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class BookController extends Controller
 {
@@ -42,24 +43,32 @@ class BookController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, BookCopyService $copies)
     {
         $data = $request->validate($this->rules());
         $data['isbn'] = filled($data['isbn'] ?? null) ? $data['isbn'] : null;
-        $data['available_copies'] = (int) $data['total_copies'];
+        $totalCopies = (int) $data['total_copies'];
+        $data['available_copies'] = $totalCopies;
 
         if ($request->hasFile('cover_image')) {
             $data['cover_image'] = $request->file('cover_image')->store('covers', 'public');
         }
 
-        Book::query()->create($data);
+        DB::transaction(function () use ($data, $totalCopies, $copies) {
+            $book = Book::query()->create($data);
+            $copies->createForBook($book, $totalCopies);
+        });
 
         return redirect()->route('admin.books.index')->with('success', 'Book added to inventory successfully.');
     }
 
     public function edit(Book $book)
     {
-        $book->load(['author', 'category'])->loadCount('activeBorrowings');
+        $book->load([
+            'author',
+            'category',
+            'copies' => fn ($query) => $query->orderBy('id'),
+        ])->loadCount('activeBorrowings');
 
         return view('admin.books.edit', [
             'book' => $book,
@@ -68,20 +77,13 @@ class BookController extends Controller
         ]);
     }
 
-    public function update(Request $request, Book $book)
+    public function update(Request $request, Book $book, BookCopyService $copies)
     {
         $data = $request->validate($this->rules($book));
-        $activeLoans = $book->activeBorrowings()->count();
         $totalCopies = (int) $data['total_copies'];
-
-        if ($totalCopies < $activeLoans) {
-            throw ValidationException::withMessages([
-                'total_copies' => "Total copies cannot be lower than the {$activeLoans} active loan(s).",
-            ]);
-        }
+        unset($data['total_copies']);
 
         $data['isbn'] = filled($data['isbn'] ?? null) ? $data['isbn'] : null;
-        $data['available_copies'] = $totalCopies - $activeLoans;
 
         if ($request->hasFile('cover_image')) {
             if ($book->cover_image) {
@@ -94,7 +96,10 @@ class BookController extends Controller
             $data['cover_image'] = null;
         }
 
-        $book->update($data);
+        DB::transaction(function () use ($book, $data, $totalCopies, $copies) {
+            $book->update($data);
+            $copies->adjustCount($book, $totalCopies);
+        });
 
         return redirect()->route('admin.books.index')->with('success', 'Book updated successfully.');
     }

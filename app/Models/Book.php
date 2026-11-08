@@ -55,6 +55,16 @@ class Book extends Model
         return $this->hasMany(Borrowing::class)->where('status', 'borrowed');
     }
 
+    public function copies(): HasMany
+    {
+        return $this->hasMany(BookCopy::class);
+    }
+
+    public function availableCopies(): HasMany
+    {
+        return $this->hasMany(BookCopy::class)->where('status', BookCopy::STATUS_AVAILABLE);
+    }
+
     public function scopeSearch($query, ?string $term)
     {
         if (! $term) {

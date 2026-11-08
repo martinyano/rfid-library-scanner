@@ -58,6 +58,9 @@
                         <tr>
                             <td>
                                 <div class="fw-semibold small text-truncate" style="max-width: 240px;">{{ $borrowing->book?->title ?? 'Deleted book' }}</div>
+                                @if ($borrowing->copy?->rfid_uid)
+                                    <div class="small text-muted-library"><i class="bi bi-upc-scan me-1"></i><code>{{ $borrowing->copy->rfid_uid }}</code></div>
+                                @endif
                             </td>
                             <td class="small">
                                 <a href="{{ route('admin.students.show', $borrowing->user) }}" class="text-dark fw-semibold">{{ $borrowing->user?->name ?? 'Deleted student' }}</a>

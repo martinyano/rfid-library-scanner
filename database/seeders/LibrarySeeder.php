@@ -243,6 +243,10 @@ class LibrarySeeder extends Seeder
             ]
         );
 
+        foreach ([$noli, $elfili, $dekada, $poon, $mockingbird, $nineteenEightyFour, $time, $phHistory] as $book) {
+            $this->ensureCopies($book);
+        }
+
         $mariaLoan = Borrowing::query()->firstOrCreate(
             [
                 'user_id' => $maria->id,
@@ -259,6 +263,7 @@ class LibrarySeeder extends Seeder
         if ($mariaLoan->wasRecentlyCreated) {
             $noli->decrement('available_copies');
         }
+        $this->assignBorrowedCopy($mariaLoan, $noli);
 
         $mariaSecondLoan = Borrowing::query()->firstOrCreate(
             [
@@ -275,6 +280,7 @@ class LibrarySeeder extends Seeder
         if ($mariaSecondLoan->wasRecentlyCreated) {
             $nineteenEightyFour->decrement('available_copies');
         }
+        $this->assignBorrowedCopy($mariaSecondLoan, $nineteenEightyFour);
 
         $juanLoan = Borrowing::query()->firstOrCreate(
             [
@@ -292,6 +298,7 @@ class LibrarySeeder extends Seeder
         if ($juanLoan->wasRecentlyCreated) {
             $elfili->decrement('available_copies');
         }
+        $this->assignBorrowedCopy($juanLoan, $elfili);
 
         Borrowing::query()->firstOrCreate(
             [
@@ -363,5 +370,39 @@ class LibrarySeeder extends Seeder
         );
 
         $this->command?->info('Library demo data seeded.');
+    }
+
+    private function ensureCopies(Book $book): void
+    {
+        if (! $book->copies()->exists()) {
+            for ($i = 1; $i <= (int) $book->total_copies; $i++) {
+                $book->copies()->create([
+                    'status' => 'available',
+                ]);
+            }
+        }
+
+        $book->copies()
+            ->whereNull('rfid_uid')
+            ->get()
+            ->each(fn ($copy) => $copy->update([
+                'rfid_uid' => sprintf('BOOK-%d-%d', $book->id, $copy->id),
+            ]));
+    }
+
+    private function assignBorrowedCopy(Borrowing $borrowing, Book $book): void
+    {
+        if ($borrowing->book_copy_id) {
+            return;
+        }
+
+        $copy = $book->copies()->where('status', 'available')->first();
+
+        if (! $copy) {
+            return;
+        }
+
+        $copy->update(['status' => 'borrowed']);
+        $borrowing->update(['book_copy_id' => $copy->id]);
     }
 }

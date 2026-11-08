@@ -35,6 +35,8 @@ class BorrowingTest extends TestCase
             'book_id' => $book->id,
             'status' => 'borrowed',
         ]);
+        $this->assertNotNull(Borrowing::query()->first()->book_copy_id);
+        $this->assertSame(1, $book->copies()->where('status', 'borrowed')->count());
         $this->assertSame(1, $book->fresh()->available_copies);
     }
 
@@ -98,6 +100,7 @@ class BorrowingTest extends TestCase
         $borrowing->refresh();
         $this->assertSame('returned', $borrowing->status);
         $this->assertNotNull($borrowing->returned_at);
+        $this->assertSame(0, $book->copies()->where('status', 'borrowed')->count());
         $this->assertSame(2, $book->fresh()->available_copies);
     }
 
@@ -127,6 +130,7 @@ class BorrowingTest extends TestCase
 
         $response->assertRedirect();
         $this->assertSame('lost', $borrowing->fresh()->status);
+        $this->assertSame(1, $book->copies()->where('status', 'lost')->count());
         $this->assertSame(1, $book->fresh()->total_copies);
         $this->assertSame(1, $book->fresh()->available_copies);
     }

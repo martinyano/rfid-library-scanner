@@ -4,11 +4,13 @@ use App\Http\Controllers\Admin\AttendanceController as AdminAttendanceController
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\AuthorController;
 use App\Http\Controllers\Admin\BookController as AdminBookController;
+use App\Http\Controllers\Admin\BookCopyController as AdminBookCopyController;
 use App\Http\Controllers\Admin\BorrowingController as AdminBorrowingController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
+use App\Http\Controllers\Api\RfidCirculationController;
 use App\Http\Controllers\Api\RfidScanController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ScanController;
@@ -26,6 +28,10 @@ Route::post('/api/rfid/scan', RfidScanController::class)
     ->middleware(['rfid.key', 'throttle:60,1'])
     ->name('api.rfid.scan');
 
+Route::post('/api/rfid/circulation', RfidCirculationController::class)
+    ->middleware(['rfid.key', 'throttle:120,1'])
+    ->name('api.rfid.circulation');
+
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('login', [AdminAuthController::class, 'create'])->name('login');
     Route::post('login', [AdminAuthController::class, 'store'])->middleware('throttle:5,1')->name('login.store');
@@ -38,6 +44,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('categories', CategoryController::class)->except(['show']);
         Route::resource('students', AdminStudentController::class);
         Route::resource('books', AdminBookController::class)->except(['show']);
+        Route::post('books/{book}/copies', [AdminBookCopyController::class, 'store'])->name('books.copies.store');
+        Route::put('books/{book}/copies/{copy}', [AdminBookCopyController::class, 'update'])->name('books.copies.update');
+        Route::delete('books/{book}/copies/{copy}', [AdminBookCopyController::class, 'destroy'])->name('books.copies.destroy');
 
         Route::get('borrowings', [AdminBorrowingController::class, 'index'])->name('borrowings.index');
         Route::get('borrowings/{borrowing}', [AdminBorrowingController::class, 'show'])->name('borrowings.show');

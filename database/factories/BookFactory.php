@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Author;
 use App\Models\Book;
+use App\Models\BookCopy;
 use App\Models\Category;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -27,5 +28,27 @@ class BookFactory extends Factory
             'total_copies' => $copies,
             'available_copies' => $copies,
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (Book $book) {
+            $available = max(0, (int) $book->available_copies);
+            $borrowed = max(0, (int) $book->total_copies - $available);
+
+            for ($i = 0; $i < $available; $i++) {
+                BookCopy::factory()->create([
+                    'book_id' => $book->id,
+                    'status' => BookCopy::STATUS_AVAILABLE,
+                ]);
+            }
+
+            for ($i = 0; $i < $borrowed; $i++) {
+                BookCopy::factory()->create([
+                    'book_id' => $book->id,
+                    'status' => BookCopy::STATUS_BORROWED,
+                ]);
+            }
+        });
     }
 }

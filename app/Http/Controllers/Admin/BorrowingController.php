@@ -12,7 +12,7 @@ class BorrowingController extends Controller
     public function index(Request $request)
     {
         $borrowings = Borrowing::query()
-            ->with(['user', 'book'])
+            ->with(['user', 'book', 'copy'])
             ->when($request->input('status') === 'overdue', fn ($query) => $query->overdue())
             ->when(in_array($request->input('status'), ['borrowed', 'returned', 'lost', 'damaged'], true), fn ($query) => $query->where('status', $request->input('status')))
             ->when($request->string('q')->trim()->toString(), function ($query, $q) {
@@ -32,7 +32,7 @@ class BorrowingController extends Controller
 
     public function show(Borrowing $borrowing)
     {
-        $borrowing->load(['user', 'book', 'handledBy']);
+        $borrowing->load(['user', 'book', 'copy', 'handledBy']);
 
         return view('admin.borrowings.show', compact('borrowing'));
     }

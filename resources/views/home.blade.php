@@ -14,7 +14,7 @@
                 </span>
                 <h1 class="hero-title mb-3">{{ $libraryName }}</h1>
                 <p class="lead mb-4">
-                    Tap your RFID card to enter the library, explore the catalog, and borrow books in seconds.
+                    Tap your RFID card to enter the library, then tap a book's tag to borrow or return it in seconds.
                     One connected system for students, librarians, and daily library operations.
                 </p>
                 <div class="d-flex flex-column flex-sm-row gap-2 mb-4">

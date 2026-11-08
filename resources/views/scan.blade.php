@@ -45,7 +45,7 @@
 
                 <div class="rule-pill text-start d-flex gap-2 mb-3">
                     <i class="bi bi-info-circle mt-1"></i>
-                    <span>If you are using a USB card reader, the form can submit automatically when the reader sends Enter.</span>
+                    <span>To borrow or return at the kiosk, tap your student card first, then tap the book's RFID tag. If you are using a USB card reader, the form can submit automatically when the reader sends Enter.</span>
                 </div>
 
                 <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
@@ -68,4 +68,25 @@
             IoT readers can post scans to <code>/api/rfid/scan</code> using the configured API key.
         </div>
     </div>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const inputField = document.getElementById('rfid_uid');
+        if (inputField) {
+            inputField.focus();
+
+            // If there is an error message on screen, auto-clear the input and re-focus after 2 seconds
+            @if(session('error') || $errors->any())
+                setTimeout(function() {
+                    inputField.value = '';
+                    inputField.focus();
+                }, 2000); // clears error state/input after 2 seconds ready for next scan
+            @endif
+
+            // Keep focus locked to the input field
+            document.addEventListener('click', function() {
+                inputField.focus();
+            });
+        }
+    });
+    </script>
 @endsection

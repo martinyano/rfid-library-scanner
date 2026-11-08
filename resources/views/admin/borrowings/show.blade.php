@@ -24,6 +24,9 @@
                                 <div class="small text-muted-library">{{ $borrowing->book->author?->name }}</div>
                                 <a href="{{ route('admin.books.edit', $borrowing->book) }}" class="small">View in inventory</a>
                             @endif
+                            <div class="small text-muted-library mt-1">
+                                Copy: <code>{{ $borrowing->copy?->rfid_uid ?? 'Unassigned' }}</code>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <div class="small text-muted-library">Student</div>

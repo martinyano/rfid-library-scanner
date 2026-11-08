@@ -30,4 +30,6 @@
             </form>
         </div>
     </div>
+
+    @include('admin.books._copies', ['book' => $book])
 @endsection

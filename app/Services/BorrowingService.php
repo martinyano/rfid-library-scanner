@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Book;
+use App\Models\BookCopy;
 use App\Models\Borrowing;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,7 @@ class BorrowingService
 {
     public function __construct(
         private readonly SettingService $settings,
+        private readonly BookCopyService $copies,
     ) {}
 
     public function activeCount(User $student): int
@@ -61,21 +63,65 @@ class BorrowingService
                 throw ValidationException::withMessages(['borrow' => $message]);
             }
 
-            $borrowedAt = today();
-            $dueAt = today()->addDays($this->settings->int('borrow_days', 7));
+            $copy = $lockedBook->copies()
+                ->where('status', BookCopy::STATUS_AVAILABLE)
+                ->lockForUpdate()
+                ->first();
 
-            $borrowing = Borrowing::query()->create([
-                'user_id' => $student->id,
-                'book_id' => $lockedBook->id,
-                'borrowed_at' => $borrowedAt,
-                'due_at' => $dueAt,
-                'status' => 'borrowed',
-            ]);
+            if (! $copy) {
+                throw ValidationException::withMessages([
+                    'borrow' => 'All copies of this book are currently borrowed.',
+                ]);
+            }
 
-            $lockedBook->decrement('available_copies');
-
-            return $borrowing;
+            return $this->createBorrowing($student, $lockedBook, $copy);
         });
+    }
+
+    /**
+     * Borrow a specific physical copy, typically from an RFID book tag scan.
+     *
+     * @throws ValidationException
+     */
+    public function borrowCopy(User $student, BookCopy $copy): Borrowing
+    {
+        return DB::transaction(function () use ($student, $copy) {
+            $lockedCopy = BookCopy::query()->whereKey($copy->id)->lockForUpdate()->firstOrFail();
+            $lockedBook = Book::query()->whereKey($lockedCopy->book_id)->lockForUpdate()->firstOrFail();
+
+            if ($message = $this->canBorrow($student, $lockedBook)) {
+                throw ValidationException::withMessages(['borrow' => $message]);
+            }
+
+            if ($lockedCopy->status !== BookCopy::STATUS_AVAILABLE) {
+                throw ValidationException::withMessages([
+                    'borrow' => 'This copy is not available for borrowing.',
+                ]);
+            }
+
+            return $this->createBorrowing($student, $lockedBook, $lockedCopy);
+        });
+    }
+
+    private function createBorrowing(User $student, Book $book, BookCopy $copy): Borrowing
+    {
+        $borrowedAt = today();
+        $dueAt = today()->addDays($this->settings->int('borrow_days', 7));
+
+        $borrowing = Borrowing::query()->create([
+            'user_id' => $student->id,
+            'book_id' => $book->id,
+            'book_copy_id' => $copy->id,
+            'borrowed_at' => $borrowedAt,
+            'due_at' => $dueAt,
+            'status' => 'borrowed',
+        ]);
+
+        $copy->update(['status' => BookCopy::STATUS_BORROWED]);
+
+        $this->copies->syncCounters($book);
+
+        return $borrowing;
     }
 
     public function markReturned(Borrowing $borrowing, ?User $handledBy = null): void
@@ -87,19 +133,25 @@ class BorrowingService
                 throw ValidationException::withMessages(['borrowing' => 'This loan is no longer active.']);
             }
 
+            $copy = $this->lockedCopyFor($borrowing);
+
             $borrowing->update([
                 'status' => 'returned',
                 'returned_at' => today(),
                 'handled_by_id' => $handledBy?->id,
             ]);
 
-            $book = $borrowing->book()->withTrashed()->first();
+            if ($copy) {
+                $copy->update(['status' => BookCopy::STATUS_AVAILABLE]);
 
-            if ($book) {
-                $book->update([
-                    'available_copies' => min($book->total_copies, $book->available_copies + 1),
-                ]);
+                if ($copy->book) {
+                    $this->copies->syncCounters($copy->book);
+                }
+
+                return;
             }
+
+            $this->restoreLegacyCopy($borrowing);
         });
     }
 
@@ -112,13 +164,25 @@ class BorrowingService
                 throw ValidationException::withMessages(['borrowing' => 'This loan is no longer active.']);
             }
 
+            $copy = $this->lockedCopyFor($borrowing);
+
             $borrowing->update([
                 'status' => 'lost',
                 'returned_at' => today(),
                 'handled_by_id' => $handledBy?->id,
             ]);
 
-            $this->removeCopyFromCirculation($borrowing);
+            if ($copy) {
+                $copy->update(['status' => BookCopy::STATUS_LOST]);
+
+                if ($copy->book) {
+                    $this->copies->syncCounters($copy->book);
+                }
+
+                return;
+            }
+
+            $this->removeLegacyCopyFromCirculation($borrowing);
         });
     }
 
@@ -131,14 +195,55 @@ class BorrowingService
                 throw ValidationException::withMessages(['borrowing' => 'This loan is no longer active.']);
             }
 
+            $copy = $this->lockedCopyFor($borrowing);
+
             $borrowing->update([
                 'status' => 'damaged',
                 'returned_at' => today(),
                 'handled_by_id' => $handledBy?->id,
             ]);
 
-            $this->removeCopyFromCirculation($borrowing);
+            if ($copy) {
+                $copy->update(['status' => BookCopy::STATUS_DAMAGED]);
+
+                if ($copy->book) {
+                    $this->copies->syncCounters($copy->book);
+                }
+
+                return;
+            }
+
+            $this->removeLegacyCopyFromCirculation($borrowing);
         });
+    }
+
+    private function lockedCopyFor(Borrowing $borrowing): ?BookCopy
+    {
+        if ($borrowing->book_copy_id) {
+            return BookCopy::query()
+                ->whereKey($borrowing->book_copy_id)
+                ->lockForUpdate()
+                ->first();
+        }
+
+        return BookCopy::query()
+            ->where('book_id', $borrowing->book_id)
+            ->where('status', BookCopy::STATUS_BORROWED)
+            ->lockForUpdate()
+            ->first();
+    }
+
+    private function restoreLegacyCopy(Borrowing $borrowing): void
+    {
+        $book = $borrowing->book()->withTrashed()->first();
+
+        if (! $book) {
+            return;
+        }
+
+        $book->update([
+            'available_copies' => min($book->total_copies, $book->available_copies + 1),
+        ]);
     }
 
     public function extend(Borrowing $borrowing, int $days): void
@@ -154,7 +259,7 @@ class BorrowingService
         ]);
     }
 
-    private function removeCopyFromCirculation(Borrowing $borrowing): void
+    private function removeLegacyCopyFromCirculation(Borrowing $borrowing): void
     {
         $book = $borrowing->book()->withTrashed()->first();
 

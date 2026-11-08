@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\BookCopy;
 use App\Models\User;
 use App\Services\AttendanceService;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -48,7 +50,7 @@ class StudentController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email'],
             'student_number' => ['nullable', 'string', 'max:50', 'unique:users,student_number'],
-            'rfid_uid' => ['required', 'string', 'max:100', 'unique:users,rfid_uid'],
+            'rfid_uid' => ['required', 'string', 'max:100', 'unique:users,rfid_uid', $this->notABookTag()],
             'course' => ['nullable', 'string', 'max:120'],
             'year_level' => ['nullable', 'string', 'max:50'],
             'phone' => ['nullable', 'string', 'max:30'],
@@ -93,7 +95,7 @@ class StudentController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')->ignore($student->id)],
             'student_number' => ['nullable', 'string', 'max:50', Rule::unique('users', 'student_number')->ignore($student->id)],
-            'rfid_uid' => ['required', 'string', 'max:100', Rule::unique('users', 'rfid_uid')->ignore($student->id)],
+            'rfid_uid' => ['required', 'string', 'max:100', Rule::unique('users', 'rfid_uid')->ignore($student->id), $this->notABookTag()],
             'course' => ['nullable', 'string', 'max:120'],
             'year_level' => ['nullable', 'string', 'max:50'],
             'phone' => ['nullable', 'string', 'max:30'],
@@ -119,5 +121,20 @@ class StudentController extends Controller
         $student->delete();
 
         return redirect()->route('admin.students.index')->with('success', 'Student deleted successfully.');
+    }
+
+    private function notABookTag(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            $normalized = strtoupper(preg_replace('/\s+/', '', trim((string) $value)));
+
+            if ($normalized === '') {
+                return;
+            }
+
+            if (BookCopy::query()->where('rfid_uid', $normalized)->exists()) {
+                $fail('This RFID UID is already assigned to a book copy.');
+            }
+        };
     }
 }

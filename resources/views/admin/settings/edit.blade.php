@@ -67,23 +67,42 @@
                 <div class="card">
                     <div class="card-header"><i class="bi bi-broadcast me-1"></i> RFID integration</div>
                     <div class="card-body">
-                        <p class="small text-muted-library">Send card scans from an ESP32 or similar device to this endpoint.</p>
+                        <p class="small text-muted-library">Send card and book tag scans from an ESP32 or similar reader.</p>
+
                         <div class="mb-3">
-                            <div class="small text-muted-library">Endpoint</div>
+                            <div class="small text-muted-library">Attendance endpoint</div>
                             <code class="small d-block text-break">POST {{ url('/api/rfid/scan') }}</code>
+                            <pre class="small bg-light border rounded p-2 mt-2 mb-0"><code>{
+  "rfid_uid": "CARD-UID"
+}</code></pre>
                         </div>
+
+                        <div class="mb-3">
+                            <div class="small text-muted-library">Borrow / return endpoint</div>
+                            <code class="small d-block text-break">POST {{ url('/api/rfid/circulation') }}</code>
+                            <pre class="small bg-light border rounded p-2 mt-2 mb-0"><code>{
+  "rfid_uid": "CARD-OR-BOOK-UID",
+  "device_id": "kiosk-1"
+}</code></pre>
+                        </div>
+
                         <div class="mb-3">
                             <div class="small text-muted-library">Header</div>
                             <code class="small d-block text-break">X-RFID-Key: {{ config('library.rfid_api_key') }}</code>
                         </div>
-                        <div class="mb-3">
-                            <div class="small text-muted-library">JSON body</div>
-                            <pre class="small bg-light border rounded p-2 mb-0"><code>{
-  "rfid_uid": "CARD-UID",
-  "source": "iot"
-}</code></pre>
+
+                        <ol class="small text-muted-library ps-3 mb-3">
+                            <li>Student taps their card: entry is logged and the kiosk waits for a book.</li>
+                            <li>Student taps a book copy tag: active loan is returned, otherwise it is borrowed.</li>
+                            <li>The pending student session expires after {{ config('library.kiosk_session_seconds') }} seconds.</li>
+                        </ol>
+
+                        <div class="mb-0">
+                            <div class="small text-muted-library">Response actions</div>
+                            <code class="small d-block">identify &middot; borrow &middot; return</code>
                         </div>
-                        <p class="small text-muted-library mb-0">The API key is set with the <code>RFID_API_KEY</code> environment variable.</p>
+
+                        <p class="small text-muted-library mt-3 mb-0">The API key is set with the <code>RFID_API_KEY</code> environment variable. Register each copy tag in the book's edit page.</p>
                     </div>
                 </div>
             </div>
