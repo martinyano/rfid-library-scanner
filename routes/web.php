@@ -19,14 +19,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 
-Route::post('/api/rfid/scan', RfidScanController::class)
-    ->middleware(['rfid.key', 'throttle:60,1'])
-    ->name('api.rfid.scan');
-
-Route::post('/api/rfid/circulation', RfidCirculationController::class)
-    ->middleware(['rfid.key', 'throttle:120,1'])
-    ->name('api.rfid.circulation');
-
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('login', [AdminAuthController::class, 'create'])->name('login');
     Route::post('login', [AdminAuthController::class, 'store'])->middleware('throttle:5,1')->name('login.store');
