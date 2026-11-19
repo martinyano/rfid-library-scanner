@@ -38,7 +38,7 @@ flowchart LR
     A -->|Return, lost, damaged, extend and mark-paid actions| SYS
     SYS -->|Inventory, live attendance, live loans, fines and notifications| A
 
-    SYS -->|Due-soon and overdue reminder emails| E
+    SYS -->|Due-soon, overdue and borrow/return receipt emails| E
     E -->|Delivered email| S
 
     C -->|Trigger reminder and attendance-closing jobs| SYS
@@ -69,6 +69,7 @@ flowchart LR
     P9([9.0 Dashboard & Reporting])
     P10([10.0 Notifications])
     P11([11.0 Fine Transactions])
+    P12([12.0 Receipt Emails])
 
     %% Data stores
     D1[(D1 users)]
@@ -148,6 +149,13 @@ flowchart LR
     P7 -->|Send reminder email| E
     E -->|Email delivered| S
 
+    %% Receipt emails
+    P5 -->|Borrow / return confirmation| P12
+    P12 -->|Student email details| D1
+    P12 -->|Book, tag and timestamp details| D5
+    P12 -->|Send receipt email| E
+    E -->|Receipt delivered| S
+
     %% Fine transactions
     A -->|Overdue fine amount and notes| P11
     P11 -->|Create unpaid transaction| D11
@@ -216,6 +224,7 @@ flowchart LR
 | 9.0 Dashboard & Reporting | Page/report requests, search filters, live-feed polls | Dashboards, live attendance and loans, fine totals, notification menu | D1, D4, D5, D6, D7, D10, D11, D12 |
 | 10.0 Notifications | Due-soon, overdue, fine, failed-tap events | Admin notification records, unread badge, read status | D1, D12 |
 | 11.0 Fine Transactions | Admin-entered amount and notes, mark-paid action | Unpaid/paid fine records and totals | D1, D5, D11, D12 |
+| 12.0 Receipt Emails | Borrow/return confirmation from admin or RFID circulation | Laravel Markdown borrow/return receipts sent to student email | D1, D5 |
 
 ---
 
@@ -226,7 +235,8 @@ flowchart LR
 - The kiosk flow is: tap the student card (logs entry only and opens a short pending session), then tap a book copy tag. Tapping a copy already on loan to that student returns it; otherwise the copy is borrowed. The exact card and book tag UIDs are snapshotted on the borrowing. Pending sessions are scoped by `device_id` (or client IP when omitted).
 - Lost and damaged copies remain in `book_copies` for records but are excluded from circulation counters.
 - Fines are not calculated automatically. Admins enter a fine amount on an overdue borrowing; the amount and payment status are stored in `transactions`.
-- Admins receive in-app database notifications for due-soon and overdue loans, recorded fines, and failed RFID taps. Reminder emails are still sent to students.
+- Admins receive in-app database notifications for due-soon and overdue loans, recorded fines, and failed RFID taps. Laravel Markdown reminder emails are still sent to students.
+- Borrow and return transactions immediately send Laravel Markdown receipts to the student's email address. `borrowed_at` and `returned_at` are stored as datetimes so receipts can include the transaction time.
 - The RFID reader is an external system that authenticates with the `X-RFID-Key` header. `POST /api/rfid/scan` is the door entry/exit toggle; `POST /api/rfid/circulation` handles kiosk borrow/return. The Python bridge selects the endpoint with `RFID_MODE`.
 - The admin attendance and borrowings pages poll live JSON endpoints so taps appear without a reload.
 - The scheduler runs two commands: reminder emails at 08:00 and stale attendance closing at 23:30.

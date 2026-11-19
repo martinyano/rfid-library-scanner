@@ -29,7 +29,7 @@ class DueSoonReminder extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.due-soon',
+            markdown: 'emails.due-soon',
         );
     }
 }

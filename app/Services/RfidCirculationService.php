@@ -54,28 +54,10 @@ class RfidCirculationService
             throw new CirculationException('Student account is inactive.', 403);
         }
 
-        $result = $this->attendance->toggle($student, 'kiosk', $ip, $userAgent);
-        $action = $result['action']; // 'entry' or 'exit'
-        $cacheKey = $this->cacheKey($deviceId, $ip);
-
-        if ($action === 'exit') {
-            Cache::forget($cacheKey);
-
-            return [
-                'status' => 'ok',
-                'action' => 'exit',
-                'next' => null,
-                'message' => 'Goodbye, '.$student->name.'. Your exit has been logged.',
-                'attendance' => 'exit',
-                'card_uid' => $student->rfid_uid,
-                'student' => $this->studentPayload($student),
-                'book' => null,
-                'due_at' => null,
-            ];
-        }
+        $this->attendance->entry($student, 'kiosk', $ip, $userAgent);
 
         Cache::put(
-            $cacheKey,
+            $this->cacheKey($deviceId, $ip),
             $student->id,
             now()->addSeconds($this->sessionSeconds())
         );

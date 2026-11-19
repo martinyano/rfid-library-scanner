@@ -30,9 +30,9 @@ class Borrowing extends Model
     protected function casts(): array
     {
         return [
-            'borrowed_at' => 'date',
+            'borrowed_at' => 'datetime',
             'due_at' => 'date',
-            'returned_at' => 'date',
+            'returned_at' => 'datetime',
             'due_soon_notified_at' => 'datetime',
             'overdue_notified_at' => 'datetime',
         ];

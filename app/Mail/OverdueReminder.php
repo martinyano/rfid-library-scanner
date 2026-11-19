@@ -29,7 +29,7 @@ class OverdueReminder extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.overdue',
+            markdown: 'emails.overdue',
         );
     }
 }

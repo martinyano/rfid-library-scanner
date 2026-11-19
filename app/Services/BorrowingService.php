@@ -14,6 +14,7 @@ class BorrowingService
     public function __construct(
         private readonly SettingService $settings,
         private readonly BookCopyService $copies,
+        private readonly BorrowingReceiptService $receipts,
     ) {}
 
     public function activeCount(User $student): int
@@ -56,7 +57,7 @@ class BorrowingService
      */
     public function borrow(User $student, Book $book, ?string $cardRfidUid = null): Borrowing
     {
-        return DB::transaction(function () use ($student, $book, $cardRfidUid) {
+        $borrowing = DB::transaction(function () use ($student, $book, $cardRfidUid) {
             $lockedBook = Book::query()->whereKey($book->id)->lockForUpdate()->firstOrFail();
 
             if ($message = $this->canBorrow($student, $lockedBook)) {
@@ -76,6 +77,10 @@ class BorrowingService
 
             return $this->createBorrowing($student, $lockedBook, $copy, $cardRfidUid);
         });
+
+        $this->receipts->borrowed($borrowing);
+
+        return $borrowing;
     }
 
     /**
@@ -85,7 +90,7 @@ class BorrowingService
      */
     public function borrowCopy(User $student, BookCopy $copy, ?string $cardRfidUid = null, ?string $bookRfidUid = null): Borrowing
     {
-        return DB::transaction(function () use ($student, $copy, $cardRfidUid, $bookRfidUid) {
+        $borrowing = DB::transaction(function () use ($student, $copy, $cardRfidUid, $bookRfidUid) {
             $lockedCopy = BookCopy::query()->whereKey($copy->id)->lockForUpdate()->firstOrFail();
             $lockedBook = Book::query()->whereKey($lockedCopy->book_id)->lockForUpdate()->firstOrFail();
 
@@ -101,6 +106,10 @@ class BorrowingService
 
             return $this->createBorrowing($student, $lockedBook, $lockedCopy, $cardRfidUid, $bookRfidUid);
         });
+
+        $this->receipts->borrowed($borrowing);
+
+        return $borrowing;
     }
 
     private function createBorrowing(
@@ -110,7 +119,7 @@ class BorrowingService
         ?string $cardRfidUid = null,
         ?string $bookRfidUid = null,
     ): Borrowing {
-        $borrowedAt = today();
+        $borrowedAt = now();
         $dueAt = today()->addDays($this->settings->int('borrow_days', 7));
 
         $borrowing = Borrowing::query()->create([
@@ -144,7 +153,7 @@ class BorrowingService
 
             $borrowing->update([
                 'status' => 'returned',
-                'returned_at' => today(),
+                'returned_at' => now(),
                 'handled_by_id' => $handledBy?->id,
             ]);
 
@@ -160,6 +169,10 @@ class BorrowingService
 
             $this->restoreLegacyCopy($borrowing);
         });
+
+        $borrowing->refresh();
+
+        $this->receipts->returned($borrowing);
     }
 
     public function markLost(Borrowing $borrowing, ?User $handledBy = null): void
@@ -175,7 +188,7 @@ class BorrowingService
 
             $borrowing->update([
                 'status' => 'lost',
-                'returned_at' => today(),
+                'returned_at' => now(),
                 'handled_by_id' => $handledBy?->id,
             ]);
 
@@ -206,7 +219,7 @@ class BorrowingService
 
             $borrowing->update([
                 'status' => 'damaged',
-                'returned_at' => today(),
+                'returned_at' => now(),
                 'handled_by_id' => $handledBy?->id,
             ]);
 

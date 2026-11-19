@@ -12,8 +12,6 @@ use App\Http\Controllers\Admin\NotificationController as AdminNotificationContro
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
-use App\Http\Controllers\Api\RfidCirculationController;
-use App\Http\Controllers\Api\RfidScanController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
