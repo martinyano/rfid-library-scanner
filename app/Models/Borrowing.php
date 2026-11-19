@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Borrowing extends Model
 {
@@ -14,6 +15,8 @@ class Borrowing extends Model
         'user_id',
         'book_id',
         'book_copy_id',
+        'student_rfid_uid',
+        'book_rfid_uid',
         'borrowed_at',
         'due_at',
         'returned_at',
@@ -53,6 +56,11 @@ class Borrowing extends Model
     public function handledBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'handled_by_id');
+    }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
     }
 
     public function scopeActive($query)

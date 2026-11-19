@@ -25,7 +25,7 @@
                                 <a href="{{ route('admin.books.edit', $borrowing->book) }}" class="small">View in inventory</a>
                             @endif
                             <div class="small text-muted-library mt-1">
-                                Copy: <code>{{ $borrowing->copy?->rfid_uid ?? 'Unassigned' }}</code>
+                                Copy: <code>{{ $borrowing->book_rfid_uid ?? $borrowing->copy?->rfid_uid ?? 'Unassigned' }}</code>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -34,6 +34,11 @@
                                 <a href="{{ route('admin.students.show', $borrowing->user) }}" class="text-dark">{{ $borrowing->user?->name ?? 'Deleted student' }}</a>
                             </div>
                             <div class="small text-muted-library">{{ $borrowing->user?->student_number }} &middot; {{ $borrowing->user?->email }}</div>
+                            @if ($borrowing->student_rfid_uid)
+                                <div class="small text-muted-library mt-1">
+                                    Card tapped: <code>{{ $borrowing->student_rfid_uid }}</code>
+                                </div>
+                            @endif
                         </div>
                         <div class="col-6 col-md-3">
                             <div class="small text-muted-library">Borrowed</div>
@@ -67,6 +72,49 @@
                             </div>
                         @endif
                     </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-cash-coin me-1"></i> Overdue fines</div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush mb-3">
+                        @forelse ($borrowing->transactions as $transaction)
+                            <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center gap-2">
+                                <div>
+                                    <div class="fw-semibold small">{{ number_format($transaction->amount, 2) }}</div>
+                                    <div class="small text-muted-library">
+                                        {{ $transaction->created_at->format('M d, Y') }}
+                                        @if ($transaction->notes)&middot; {{ $transaction->notes }}@endif
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge {{ $transaction->status_badge }}">{{ $transaction->status_label }}</span>
+                                    @if ($transaction->status === 'unpaid')
+                                        <form method="POST" action="{{ route('admin.transactions.pay', $transaction) }}">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-light border" title="Mark paid"><i class="bi bi-cash"></i></button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <div class="small text-muted-library py-2">No fines recorded for this loan.</div>
+                        @endforelse
+                    </div>
+
+                    @if ($borrowing->due_at && $borrowing->due_at->lt(today()))
+                        <form method="POST" action="{{ route('admin.borrowings.transactions.store', $borrowing) }}">
+                            @csrf
+                            <label for="amount" class="form-label small fw-semibold">Record a fine</label>
+                            <input type="number" name="amount" id="amount" value="{{ old('amount') }}" class="form-control mb-2 @error('amount') is-invalid @enderror" min="0.01" max="1000000" step="0.01" required>
+                            @error('amount')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                            <label for="notes" class="form-label small fw-semibold">Notes <span class="text-muted-library">(optional)</span></label>
+                            <input type="text" name="notes" id="notes" value="{{ old('notes') }}" class="form-control @error('notes') is-invalid @enderror" maxlength="500">
+                            @error('notes')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                            <button type="submit" class="btn btn-outline-danger mt-3"><i class="bi bi-plus-lg me-1"></i> Add fine</button>
+                        </form>
+                    @endif
                 </div>
             </div>
 

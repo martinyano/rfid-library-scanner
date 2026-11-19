@@ -68,6 +68,7 @@ class RfidCirculationService
             'next' => 'tap_book',
             'message' => 'Welcome, '.$student->name.'. Tap the book tag to borrow or return.',
             'attendance' => 'entry',
+            'card_uid' => $student->rfid_uid,
             'student' => $this->studentPayload($student),
             'book' => null,
             'due_at' => null,
@@ -120,14 +121,16 @@ class RfidCirculationService
                 'next' => null,
                 'message' => 'Returned "'.$copy->book?->title.'" for '.$student->name.'.',
                 'attendance' => 'entry',
+                'card_uid' => $student->rfid_uid,
                 'student' => $this->studentPayload($student),
                 'book' => $this->bookPayload($copy),
+                'book_uid' => $copy->rfid_uid,
                 'due_at' => null,
             ];
         }
 
         try {
-            $borrowing = $this->borrowings->borrowCopy($student, $copy);
+            $borrowing = $this->borrowings->borrowCopy($student, $copy, $student->rfid_uid, $copy->rfid_uid);
         } catch (ValidationException $exception) {
             $message = collect($exception->errors())->flatten()->first() ?? 'Unable to borrow this book.';
 
@@ -142,8 +145,11 @@ class RfidCirculationService
             'next' => null,
             'message' => 'Borrowed "'.$copy->book?->title.'" for '.$student->name.'. Due '.$borrowing->due_at->format('M d, Y').'.',
             'attendance' => 'entry',
+            'card_uid' => $student->rfid_uid,
             'student' => $this->studentPayload($student),
             'book' => $this->bookPayload($copy),
+            'book_uid' => $copy->rfid_uid,
+            'borrowing_id' => $borrowing->id,
             'due_at' => $borrowing->due_at->toDateString(),
         ];
     }
@@ -157,6 +163,7 @@ class RfidCirculationService
             'name' => $student->name,
             'student_number' => $student->student_number,
             'course' => $student->course,
+            'rfid_uid' => $student->rfid_uid,
         ];
     }
 

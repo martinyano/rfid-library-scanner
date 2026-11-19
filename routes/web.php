@@ -8,21 +8,16 @@ use App\Http\Controllers\Admin\BookCopyController as AdminBookCopyController;
 use App\Http\Controllers\Admin\BorrowingController as AdminBorrowingController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
+use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
 use App\Http\Controllers\Api\RfidCirculationController;
 use App\Http\Controllers\Api\RfidScanController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\ScanController;
-use App\Http\Controllers\Student\BookController as StudentBookController;
-use App\Http\Controllers\Student\BorrowingController as StudentBorrowingController;
-use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
-use App\Http\Controllers\Student\SessionController as StudentSessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
-Route::get('/scan', [ScanController::class, 'show'])->name('scan');
-Route::post('/scan', [ScanController::class, 'store'])->middleware('throttle:20,1')->name('scan.store');
 
 Route::post('/api/rfid/scan', RfidScanController::class)
     ->middleware(['rfid.key', 'throttle:60,1'])
@@ -48,26 +43,29 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('books/{book}/copies/{copy}', [AdminBookCopyController::class, 'update'])->name('books.copies.update');
         Route::delete('books/{book}/copies/{copy}', [AdminBookCopyController::class, 'destroy'])->name('books.copies.destroy');
 
+        Route::get('borrowings/create', [AdminBorrowingController::class, 'create'])->name('borrowings.create');
+        Route::post('borrowings', [AdminBorrowingController::class, 'store'])->name('borrowings.store');
+        Route::get('borrowings/live', [AdminBorrowingController::class, 'live'])->name('borrowings.live');
         Route::get('borrowings', [AdminBorrowingController::class, 'index'])->name('borrowings.index');
         Route::get('borrowings/{borrowing}', [AdminBorrowingController::class, 'show'])->name('borrowings.show');
         Route::post('borrowings/{borrowing}/return', [AdminBorrowingController::class, 'markReturned'])->name('borrowings.return');
         Route::post('borrowings/{borrowing}/lost', [AdminBorrowingController::class, 'markLost'])->name('borrowings.lost');
         Route::post('borrowings/{borrowing}/damaged', [AdminBorrowingController::class, 'markDamaged'])->name('borrowings.damaged');
         Route::post('borrowings/{borrowing}/extend', [AdminBorrowingController::class, 'extend'])->name('borrowings.extend');
+        Route::post('borrowings/{borrowing}/transactions', [AdminTransactionController::class, 'store'])->name('borrowings.transactions.store');
 
+        Route::get('attendance/live', [AdminAttendanceController::class, 'live'])->name('attendance.live');
         Route::get('attendance', [AdminAttendanceController::class, 'index'])->name('attendance.index');
         Route::post('attendance/{log}/close', [AdminAttendanceController::class, 'close'])->name('attendance.close');
+
+        Route::get('transactions', [AdminTransactionController::class, 'index'])->name('transactions.index');
+        Route::post('transactions/{transaction}/pay', [AdminTransactionController::class, 'markPaid'])->name('transactions.pay');
+
+        Route::get('notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
+        Route::post('notifications/{notification}/read', [AdminNotificationController::class, 'markRead'])->name('notifications.read');
+        Route::post('notifications/read-all', [AdminNotificationController::class, 'readAll'])->name('notifications.read-all');
 
         Route::get('settings', [AdminSettingController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [AdminSettingController::class, 'update'])->name('settings.update');
     });
-});
-
-Route::prefix('student')->name('student.')->middleware(['auth', 'role:student'])->group(function () {
-    Route::get('dashboard', StudentDashboardController::class)->name('dashboard');
-    Route::get('books/{book}', [StudentBookController::class, 'show'])->name('books.show');
-    Route::get('books/{book}/borrow', [StudentBookController::class, 'borrowForm'])->name('books.borrow.form');
-    Route::post('books/{book}/borrow', [StudentBookController::class, 'borrow'])->name('books.borrow');
-    Route::get('borrowings', StudentBorrowingController::class)->name('borrowings.index');
-    Route::post('logout', [StudentSessionController::class, 'destroy'])->name('logout');
 });

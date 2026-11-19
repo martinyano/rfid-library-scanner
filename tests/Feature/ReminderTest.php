@@ -57,6 +57,28 @@ class ReminderTest extends TestCase
         Mail::assertSent(OverdueReminder::class, 1);
     }
 
+    public function test_due_reminders_create_admin_notifications(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->admin()->create();
+
+        Borrowing::factory()->create([
+            'due_at' => today()->addDay(),
+            'status' => 'borrowed',
+        ]);
+        Borrowing::factory()->create([
+            'due_at' => today()->subDays(3),
+            'status' => 'borrowed',
+        ]);
+
+        $this->artisan('library:send-due-reminders')->assertSuccessful();
+
+        $this->assertDatabaseCount('notifications', 2);
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $admin->id,
+        ]);
+    }
+
     public function test_reminder_email_templates_render(): void
     {
         $user = User::factory()->student()->create();
@@ -79,7 +101,7 @@ class ReminderTest extends TestCase
         $log = $student->attendanceLogs()->create([
             'rfid_uid' => $student->rfid_uid,
             'entry_at' => now()->subHours(20),
-            'source' => 'scan_page',
+            'source' => 'api',
         ]);
 
         $this->artisan('library:close-stale-attendance')->assertSuccessful();

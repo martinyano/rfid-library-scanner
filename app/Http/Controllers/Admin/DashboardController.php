@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AttendanceLog;
 use App\Models\Book;
 use App\Models\Borrowing;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Services\SettingService;
 
@@ -24,6 +25,8 @@ class DashboardController extends Controller
             'studentCount' => User::query()->students()->count(),
             'activeSessions' => AttendanceLog::query()->open()->count(),
             'todayEntries' => AttendanceLog::query()->whereDate('entry_at', today())->count(),
+            'unpaidFines' => (float) Transaction::query()->unpaid()->sum('amount'),
+            'unpaidFineCount' => Transaction::query()->unpaid()->count(),
             'recentBorrowings' => Borrowing::query()
                 ->with(['user', 'book'])
                 ->latest('borrowed_at')

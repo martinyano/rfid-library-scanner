@@ -6,7 +6,7 @@
     <div class="mb-4">
         <a href="{{ route('admin.students.index') }}" class="small"><i class="bi bi-arrow-left me-1"></i> Back to students</a>
         <h1 class="admin-page-title h3 mt-2 mb-1">Register student</h1>
-        <p class="text-muted-library mb-0">The RFID card UID is used for passwordless student login.</p>
+        <p class="text-muted-library mb-0">The RFID card UID identifies the student at the library reader.</p>
     </div>
 
     <div class="card">

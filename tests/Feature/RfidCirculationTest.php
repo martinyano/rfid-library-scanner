@@ -56,12 +56,16 @@ class RfidCirculationTest extends TestCase
             ->assertOk()
             ->assertJsonPath('action', 'borrow')
             ->assertJsonPath('book.copy_id', $copy->id)
+            ->assertJsonPath('card_uid', $student->rfid_uid)
+            ->assertJsonPath('book_uid', $copy->rfid_uid)
             ->assertJsonPath('due_at', today()->addDays(7)->toDateString());
 
         $this->assertDatabaseHas('borrowings', [
             'user_id' => $student->id,
             'book_id' => $book->id,
             'book_copy_id' => $copy->id,
+            'student_rfid_uid' => $student->rfid_uid,
+            'book_rfid_uid' => $copy->rfid_uid,
             'status' => 'borrowed',
         ]);
         $this->assertSame(BookCopy::STATUS_BORROWED, $copy->fresh()->status);
@@ -104,9 +108,17 @@ class RfidCirculationTest extends TestCase
         $this->assertDatabaseCount('attendance_logs', 0);
     }
 
-    public function test_unknown_tag_returns_not_found(): void
+    public function test_unknown_tag_returns_not_found_and_notifies_admins(): void
     {
+        $admin = User::factory()->admin()->create();
+
         $this->scan('NOT-A-REAL-TAG')->assertStatus(404);
+
+        $this->assertDatabaseCount('notifications', 1);
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_type' => User::class,
+            'notifiable_id' => $admin->id,
+        ]);
     }
 
     public function test_device_sessions_are_isolated(): void

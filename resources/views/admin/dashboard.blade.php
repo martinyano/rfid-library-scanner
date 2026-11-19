@@ -94,6 +94,15 @@
                 </div>
             </div>
         </div>
+        <div class="col-6 col-lg-3">
+            <a href="{{ route('admin.transactions.index', ['status' => 'unpaid']) }}" class="stat-card d-flex align-items-center gap-3 text-decoration-none">
+                <div class="stat-icon bg-soft-danger"><i class="bi bi-cash-coin"></i></div>
+                <div>
+                    <div class="stat-value text-danger" style="font-size: 1.4rem;">{{ number_format($unpaidFines, 2) }}</div>
+                    <div class="stat-label">Unpaid fines ({{ $unpaidFineCount }})</div>
+                </div>
+            </a>
+        </div>
     </div>
 
     <div class="row g-4 mb-4">

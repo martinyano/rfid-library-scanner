@@ -11,6 +11,9 @@
     <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
         <i class="bi bi-speedometer2"></i> Dashboard
     </a>
+    <a class="nav-link {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}" href="{{ route('admin.notifications.index') }}">
+        <i class="bi bi-bell"></i> Notifications
+    </a>
 
     <div class="sidebar-section">Circulation</div>
     <a class="nav-link {{ request()->routeIs('admin.borrowings.*') ? 'active' : '' }}" href="{{ route('admin.borrowings.index') }}">
@@ -18,6 +21,9 @@
     </a>
     <a class="nav-link {{ request()->routeIs('admin.attendance.*') ? 'active' : '' }}" href="{{ route('admin.attendance.index') }}">
         <i class="bi bi-clock-history"></i> Attendance
+    </a>
+    <a class="nav-link {{ request()->routeIs('admin.transactions.*') ? 'active' : '' }}" href="{{ route('admin.transactions.index') }}">
+        <i class="bi bi-cash-coin"></i> Transactions
     </a>
 
     <div class="sidebar-section">Catalog</div>

@@ -1,5 +1,9 @@
 @inject('settings', 'App\Services\SettingService')
-@php($libraryName = $settings->get('library_name', config('app.name')))
+@php
+    $libraryName = $settings->get('library_name', config('app.name'));
+    $unreadCount = auth()->user()->unreadNotifications()->count();
+    $latestNotifications = auth()->user()->unreadNotifications()->limit(5)->get();
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -27,6 +31,40 @@
                     <a href="{{ route('home') }}" class="btn btn-sm btn-light border d-none d-sm-inline">
                         <i class="bi bi-box-arrow-up-right me-1"></i> View site
                     </a>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-light border position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+                            <i class="bi bi-bell"></i>
+                            @if ($unreadCount > 0)
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">{{ $unreadCount }}</span>
+                            @endif
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="min-width: 20rem;">
+                            <li>
+                                <div class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <span>Notifications</span>
+                                    @if ($unreadCount > 0)
+                                        <form method="POST" action="{{ route('admin.notifications.read-all') }}">
+                                            @csrf
+                                            <button type="submit" class="btn btn-link btn-sm p-0">Mark all read</button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </li>
+                            @forelse ($latestNotifications as $notification)
+                                <li>
+                                    <a class="dropdown-item small py-2" href="{{ data_get($notification->data, 'url', route('admin.notifications.index')) }}">
+                                        <i class="bi {{ data_get($notification->data, 'icon', 'bi-bell') }} me-2"></i>
+                                        <span class="fw-semibold">{{ data_get($notification->data, 'title', 'Notification') }}</span>
+                                        <span class="d-block text-muted-library">{{ Str::limit(data_get($notification->data, 'message', ''), 65) }}</span>
+                                    </a>
+                                </li>
+                            @empty
+                                <li><span class="dropdown-item-text small text-muted-library">No unread notifications.</span></li>
+                            @endforelse
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item small" href="{{ route('admin.notifications.index') }}"><i class="bi bi-list me-1"></i> View all notifications</a></li>
+                        </ul>
+                    </div>
                     <div class="dropdown">
                         <button class="btn btn-sm btn-light border dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <span class="avatar-circle" style="width: 1.9rem; height: 1.9rem; font-size: 0.72rem;">{{ auth()->user()->initials }}</span>
@@ -64,5 +102,7 @@
             @include('admin.partials.sidebar', ['libraryName' => $libraryName])
         </div>
     </div>
+
+    @stack('scripts')
 </body>
 </html>

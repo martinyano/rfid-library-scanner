@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceLog;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
@@ -33,6 +34,29 @@ class AttendanceController extends Controller
             'insideNow' => AttendanceLog::query()->open()->count(),
             'todayEntries' => AttendanceLog::query()->whereDate('entry_at', today())->count(),
             'todayExits' => AttendanceLog::query()->whereDate('exit_at', today())->count(),
+            'recentTaps' => AttendanceLog::query()->with('user')->latest('entry_at')->limit(8)->get(),
+        ]);
+    }
+
+    public function live(Request $request): JsonResponse
+    {
+        $after = max(0, (int) $request->input('after', 0));
+
+        $logs = AttendanceLog::query()
+            ->with('user')
+            ->where('id', '>', $after)
+            ->latest('entry_at')
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'html' => view('admin.attendance.partials.live-items', ['logs' => $logs])->render(),
+            'latestId' => (int) (AttendanceLog::query()->max('id') ?? 0),
+            'counters' => [
+                'insideNow' => AttendanceLog::query()->open()->count(),
+                'todayEntries' => AttendanceLog::query()->whereDate('entry_at', today())->count(),
+                'todayExits' => AttendanceLog::query()->whereDate('exit_at', today())->count(),
+            ],
         ]);
     }
 

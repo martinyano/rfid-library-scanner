@@ -17,10 +17,8 @@
                 <span class="brand-text">{{ $libraryName }}</span>
             </a>
             <div class="d-flex align-items-center gap-2">
-                <a href="{{ route('home') }}" class="btn btn-sm btn-light border">Home</a>
-                <a href="{{ route('scan') }}" class="btn btn-sm btn-outline-primary">Scan</a>
                 @auth
-                    <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('student.dashboard') }}" class="btn btn-sm btn-primary">Dashboard</a>
+                    <a href="{{ route('admin.dashboard') }}" class="btn btn-sm btn-primary">Dashboard</a>
                 @else
                     <a href="{{ route('admin.login') }}" class="btn btn-sm btn-outline-secondary">
                         <i class="bi bi-shield-lock me-1"></i> Admin

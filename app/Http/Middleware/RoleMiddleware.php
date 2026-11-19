@@ -14,25 +14,15 @@ class RoleMiddleware
         $user = $request->user();
 
         if (! $user) {
-            return redirect()->guest($request->is('admin*') ? route('admin.login') : route('scan'));
+            return redirect()->guest(route('admin.login'));
         }
 
         if ($role === 'admin' && ! $user->isAdmin()) {
-            return redirect()->route('student.dashboard')->with('error', 'You do not have access to the admin panel.');
-        }
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
-        if ($role === 'student') {
-            if (! $user->isStudent()) {
-                return redirect()->route('admin.dashboard');
-            }
-
-            if (! $user->is_active) {
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-
-                return redirect()->route('scan')->with('error', 'Your student account is inactive. Please contact the librarian.');
-            }
+            return redirect()->route('admin.login')->with('error', 'You do not have access to the admin panel.');
         }
 
         return $next($request);

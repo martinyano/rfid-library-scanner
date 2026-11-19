@@ -48,17 +48,23 @@ class AdminPagesTest extends TestCase
             route('admin.books.index'),
             route('admin.books.create'),
             route('admin.books.edit', $book),
+            route('admin.borrowings.create'),
             route('admin.borrowings.index'),
             route('admin.borrowings.show', $borrowing),
             route('admin.borrowings.index', ['status' => 'overdue']),
             route('admin.attendance.index'),
             route('admin.attendance.index', ['date' => 'all']),
+            route('admin.transactions.index'),
+            route('admin.notifications.index'),
             route('admin.settings.edit'),
         ];
 
         foreach ($urls as $url) {
             $this->get($url)->assertOk();
         }
+
+        $this->getJson(route('admin.attendance.live'))->assertOk()->assertJsonStructure(['html', 'latestId', 'counters']);
+        $this->getJson(route('admin.borrowings.live'))->assertOk()->assertJsonStructure(['html', 'latestId', 'counters']);
     }
 
     public function test_admin_can_update_library_settings(): void
@@ -89,7 +95,9 @@ class AdminPagesTest extends TestCase
 
         $this->actingAs($student)
             ->get(route('admin.dashboard'))
-            ->assertRedirect(route('student.dashboard'))
+            ->assertRedirect(route('admin.login'))
             ->assertSessionHas('error');
+
+        $this->assertGuest();
     }
 }

@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\CirculationException;
 use App\Http\Controllers\Controller;
+use App\Services\AdminNotificationService;
 use App\Services\RfidCirculationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class RfidCirculationController extends Controller
 {
-    public function __invoke(Request $request, RfidCirculationService $circulation): JsonResponse
+    public function __invoke(Request $request, RfidCirculationService $circulation, AdminNotificationService $notifications): JsonResponse
     {
         $validated = $request->validate([
             'rfid_uid' => ['required', 'string', 'max:100'],
@@ -25,6 +26,8 @@ class RfidCirculationController extends Controller
                 $request->userAgent()
             );
         } catch (CirculationException $exception) {
+            $notifications->rfidTapFailed($exception->getMessage(), $validated['rfid_uid']);
+
             return response()->json([
                 'status' => 'error',
                 'action' => null,

@@ -54,9 +54,9 @@ class BorrowingService
     /**
      * @throws ValidationException
      */
-    public function borrow(User $student, Book $book): Borrowing
+    public function borrow(User $student, Book $book, ?string $cardRfidUid = null): Borrowing
     {
-        return DB::transaction(function () use ($student, $book) {
+        return DB::transaction(function () use ($student, $book, $cardRfidUid) {
             $lockedBook = Book::query()->whereKey($book->id)->lockForUpdate()->firstOrFail();
 
             if ($message = $this->canBorrow($student, $lockedBook)) {
@@ -74,7 +74,7 @@ class BorrowingService
                 ]);
             }
 
-            return $this->createBorrowing($student, $lockedBook, $copy);
+            return $this->createBorrowing($student, $lockedBook, $copy, $cardRfidUid);
         });
     }
 
@@ -83,9 +83,9 @@ class BorrowingService
      *
      * @throws ValidationException
      */
-    public function borrowCopy(User $student, BookCopy $copy): Borrowing
+    public function borrowCopy(User $student, BookCopy $copy, ?string $cardRfidUid = null, ?string $bookRfidUid = null): Borrowing
     {
-        return DB::transaction(function () use ($student, $copy) {
+        return DB::transaction(function () use ($student, $copy, $cardRfidUid, $bookRfidUid) {
             $lockedCopy = BookCopy::query()->whereKey($copy->id)->lockForUpdate()->firstOrFail();
             $lockedBook = Book::query()->whereKey($lockedCopy->book_id)->lockForUpdate()->firstOrFail();
 
@@ -99,12 +99,17 @@ class BorrowingService
                 ]);
             }
 
-            return $this->createBorrowing($student, $lockedBook, $lockedCopy);
+            return $this->createBorrowing($student, $lockedBook, $lockedCopy, $cardRfidUid, $bookRfidUid);
         });
     }
 
-    private function createBorrowing(User $student, Book $book, BookCopy $copy): Borrowing
-    {
+    private function createBorrowing(
+        User $student,
+        Book $book,
+        BookCopy $copy,
+        ?string $cardRfidUid = null,
+        ?string $bookRfidUid = null,
+    ): Borrowing {
         $borrowedAt = today();
         $dueAt = today()->addDays($this->settings->int('borrow_days', 7));
 
@@ -112,6 +117,8 @@ class BorrowingService
             'user_id' => $student->id,
             'book_id' => $book->id,
             'book_copy_id' => $copy->id,
+            'student_rfid_uid' => $cardRfidUid ?: $student->rfid_uid,
+            'book_rfid_uid' => $bookRfidUid ?: $copy->rfid_uid,
             'borrowed_at' => $borrowedAt,
             'due_at' => $dueAt,
             'status' => 'borrowed',

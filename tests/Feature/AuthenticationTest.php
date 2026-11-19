@@ -55,41 +55,6 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_rfid_scan_logs_attendance_and_authenticates_the_student(): void
-    {
-        $student = User::factory()->student()->create();
-
-        $response = $this->post('/scan', ['rfid_uid' => strtolower($student->rfid_uid)]);
-
-        $response->assertRedirect(route('student.dashboard'));
-        $this->assertAuthenticatedAs($student);
-        $this->assertDatabaseHas('attendance_logs', [
-            'user_id' => $student->id,
-            'exit_at' => null,
-        ]);
-    }
-
-    public function test_unknown_rfid_card_is_rejected(): void
-    {
-        $response = $this->from('/scan')->post('/scan', ['rfid_uid' => 'NOT-A-REAL-CARD']);
-
-        $response->assertRedirect('/scan');
-        $response->assertSessionHas('error');
-        $this->assertGuest();
-    }
-
-    public function test_inactive_student_cannot_scan_in(): void
-    {
-        $student = User::factory()->student()->inactive()->create();
-
-        $response = $this->from('/scan')->post('/scan', ['rfid_uid' => $student->rfid_uid]);
-
-        $response->assertRedirect('/scan');
-        $response->assertSessionHas('error');
-        $this->assertGuest();
-        $this->assertDatabaseCount('attendance_logs', 0);
-    }
-
     public function test_rfid_api_requires_the_api_key(): void
     {
         config(['library.rfid_api_key' => 'test-key']);
@@ -107,9 +72,10 @@ class AuthenticationTest extends TestCase
         config(['library.rfid_api_key' => 'test-key']);
         $student = User::factory()->student()->create();
 
-        $this->postJson('/api/rfid/scan', ['rfid_uid' => $student->rfid_uid], ['X-RFID-Key' => 'test-key'])
+        $this->postJson('/api/rfid/scan', ['rfid_uid' => strtolower($student->rfid_uid)], ['X-RFID-Key' => 'test-key'])
             ->assertOk()
-            ->assertJsonPath('action', 'entry');
+            ->assertJsonPath('action', 'entry')
+            ->assertJsonPath('card_uid', $student->rfid_uid);
 
         $this->assertDatabaseHas('attendance_logs', [
             'user_id' => $student->id,
@@ -122,5 +88,27 @@ class AuthenticationTest extends TestCase
 
         $log = AttendanceLog::query()->where('user_id', $student->id)->first();
         $this->assertNotNull($log->exit_at);
+    }
+
+    public function test_unknown_rfid_card_is_rejected(): void
+    {
+        config(['library.rfid_api_key' => 'test-key']);
+
+        $this->postJson('/api/rfid/scan', ['rfid_uid' => 'NOT-A-REAL-CARD'], ['X-RFID-Key' => 'test-key'])
+            ->assertStatus(404)
+            ->assertJsonPath('status', 'error');
+
+        $this->assertDatabaseCount('attendance_logs', 0);
+    }
+
+    public function test_inactive_student_cannot_scan_in(): void
+    {
+        config(['library.rfid_api_key' => 'test-key']);
+        $student = User::factory()->student()->inactive()->create();
+
+        $this->postJson('/api/rfid/scan', ['rfid_uid' => $student->rfid_uid], ['X-RFID-Key' => 'test-key'])
+            ->assertStatus(403);
+
+        $this->assertDatabaseCount('attendance_logs', 0);
     }
 }

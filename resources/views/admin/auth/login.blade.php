@@ -48,10 +48,6 @@
                     </div>
                 @endif
 
-                <div class="text-center mt-4 small">
-                    <a href="{{ route('scan') }}" class="me-3"><i class="bi bi-upc-scan me-1"></i> Student scan</a>
-                    <a href="{{ route('home') }}"><i class="bi bi-house me-1"></i> Home</a>
-                </div>
             </div>
         </div>
     </div>

@@ -8,6 +8,30 @@
             <h1 class="admin-page-title h3 mb-1">Borrowings</h1>
             <p class="text-muted-library mb-0">Loans, returns, and overdue records.</p>
         </div>
+        <a href="{{ route('admin.borrowings.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> New borrowing
+        </a>
+    </div>
+
+    <div class="card mb-4" data-live-feed data-live-kind="borrowings" data-live-endpoint="{{ route('admin.borrowings.live') }}" data-live-after="{{ $recentLoans->max('id') ?? 0 }}">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-broadcast-pin me-1"></i> Live RFID loans</span>
+            <span class="small text-muted-library">
+                On loan: <strong data-live-counter="activeBorrowings">{{ $activeCount }}</strong>
+                &middot; Overdue: <strong data-live-counter="overdueBorrowings" class="text-danger">{{ $overdueCount }}</strong>
+            </span>
+        </div>
+        <div class="card-body py-2">
+            <div class="list-group list-group-flush" data-live-list>
+                @include('admin.borrowings.partials.live-items', ['borrowings' => $recentLoans])
+                @if ($recentLoans->isEmpty())
+                    <div class="empty-state py-3" data-live-empty>
+                        <i class="bi bi-journal-x"></i>
+                        <div class="small">Waiting for the first book tap...</div>
+                    </div>
+                @endif
+            </div>
+        </div>
     </div>
 
     <div class="filter-bar mb-3">
@@ -65,6 +89,9 @@
                             <td class="small">
                                 <a href="{{ route('admin.students.show', $borrowing->user) }}" class="text-dark fw-semibold">{{ $borrowing->user?->name ?? 'Deleted student' }}</a>
                                 <div class="text-muted-library">{{ $borrowing->user?->student_number }}</div>
+                                @if ($borrowing->student_rfid_uid)
+                                    <div class="text-muted-library"><i class="bi bi-credit-card me-1"></i><code>{{ $borrowing->student_rfid_uid }}</code></div>
+                                @endif
                             </td>
                             <td class="small">{{ $borrowing->borrowed_at->format('M d, Y') }}</td>
                             <td class="small {{ $borrowing->is_overdue ? 'text-danger fw-semibold' : '' }}">

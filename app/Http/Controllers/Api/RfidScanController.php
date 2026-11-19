@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\AdminNotificationService;
 use App\Services\AttendanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class RfidScanController extends Controller
 {
-    public function __invoke(Request $request, AttendanceService $attendance): JsonResponse
+    public function __invoke(Request $request, AttendanceService $attendance, AdminNotificationService $notifications): JsonResponse
     {
         $validated = $request->validate([
             'rfid_uid' => ['required', 'string', 'max:100'],
@@ -18,6 +19,8 @@ class RfidScanController extends Controller
         $student = $attendance->findStudentByRfid($validated['rfid_uid']);
 
         if (! $student) {
+            $notifications->rfidTapFailed('Unregistered RFID card.', $validated['rfid_uid']);
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'RFID card is not registered.',
@@ -25,6 +28,8 @@ class RfidScanController extends Controller
         }
 
         if (! $student->is_active) {
+            $notifications->rfidTapFailed('Inactive student card.', $validated['rfid_uid']);
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Student account is inactive.',
@@ -52,7 +57,7 @@ class RfidScanController extends Controller
             'logged_at' => ($result['action'] === 'entry'
                 ? $result['log']->entry_at
                 : $result['log']->exit_at)?->toIso8601String(),
-            'dashboard_url' => route('scan'),
+            'card_uid' => $student->rfid_uid,
         ]);
     }
 }

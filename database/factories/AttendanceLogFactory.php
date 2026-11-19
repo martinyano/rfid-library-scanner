@@ -21,7 +21,7 @@ class AttendanceLogFactory extends Factory
             'rfid_uid' => strtoupper(Str::random(10)),
             'entry_at' => $entry,
             'exit_at' => $entry->copy()->addMinutes(fake()->numberBetween(20, 180)),
-            'source' => 'scan_page',
+            'source' => 'api',
             'closed_automatically' => false,
         ];
     }

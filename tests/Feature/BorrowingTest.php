@@ -22,28 +22,36 @@ class BorrowingTest extends TestCase
         $this->seed(SettingSeeder::class);
     }
 
-    public function test_student_can_borrow_an_available_book(): void
+    public function test_admin_can_record_a_borrowing_with_a_card_uid(): void
     {
+        $admin = User::factory()->admin()->create();
         $student = User::factory()->student()->create();
         $book = Book::factory()->create(['total_copies' => 2, 'available_copies' => 2]);
 
-        $response = $this->actingAs($student)->post(route('student.books.borrow', $book));
+        $response = $this->actingAs($admin)->post(route('admin.borrowings.store'), [
+            'student_id' => $student->id,
+            'book_id' => $book->id,
+            'rfid_uid' => strtolower($student->rfid_uid),
+        ]);
 
-        $response->assertRedirect(route('student.borrowings.index'));
+        $borrowing = Borrowing::query()->firstOrFail();
+        $response->assertRedirect(route('admin.borrowings.show', $borrowing));
         $this->assertDatabaseHas('borrowings', [
             'user_id' => $student->id,
             'book_id' => $book->id,
+            'student_rfid_uid' => $student->rfid_uid,
             'status' => 'borrowed',
         ]);
-        $this->assertNotNull(Borrowing::query()->first()->book_copy_id);
+        $this->assertNotNull($borrowing->book_copy_id);
         $this->assertSame(1, $book->copies()->where('status', 'borrowed')->count());
         $this->assertSame(1, $book->fresh()->available_copies);
     }
 
-    public function test_student_cannot_borrow_beyond_the_configured_limit(): void
+    public function test_admin_cannot_borrow_beyond_the_configured_limit(): void
     {
         app(SettingService::class)->set('max_books', '1');
 
+        $admin = User::factory()->admin()->create();
         $student = User::factory()->student()->create();
         $firstBook = Book::factory()->create(['total_copies' => 1, 'available_copies' => 0]);
         $secondBook = Book::factory()->create(['total_copies' => 1, 'available_copies' => 1]);
@@ -54,7 +62,10 @@ class BorrowingTest extends TestCase
             'status' => 'borrowed',
         ]);
 
-        $response = $this->actingAs($student)->post(route('student.books.borrow', $secondBook));
+        $response = $this->actingAs($admin)->post(route('admin.borrowings.store'), [
+            'student_id' => $student->id,
+            'book_id' => $secondBook->id,
+        ]);
 
         $response->assertSessionHasErrors('borrow');
         $this->assertDatabaseMissing('borrowings', [
@@ -64,8 +75,9 @@ class BorrowingTest extends TestCase
         $this->assertSame(1, $secondBook->fresh()->available_copies);
     }
 
-    public function test_student_cannot_borrow_the_same_book_twice(): void
+    public function test_admin_cannot_borrow_the_same_book_twice_for_a_student(): void
     {
+        $admin = User::factory()->admin()->create();
         $student = User::factory()->student()->create();
         $book = Book::factory()->create(['total_copies' => 2, 'available_copies' => 1]);
 
@@ -75,7 +87,10 @@ class BorrowingTest extends TestCase
             'status' => 'borrowed',
         ]);
 
-        $response = $this->actingAs($student)->post(route('student.books.borrow', $book));
+        $response = $this->actingAs($admin)->post(route('admin.borrowings.store'), [
+            'student_id' => $student->id,
+            'book_id' => $book->id,
+        ]);
 
         $response->assertSessionHasErrors('borrow');
         $this->assertSame(1, Borrowing::query()->where('user_id', $student->id)->count());

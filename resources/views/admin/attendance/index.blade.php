@@ -13,7 +13,7 @@
             <div class="card h-100">
                 <div class="card-body">
                     <div class="stat-label">Inside now</div>
-                    <div class="stat-value">{{ $insideNow }}</div>
+                    <div class="stat-value" data-live-counter="insideNow">{{ $insideNow }}</div>
                 </div>
             </div>
         </div>
@@ -21,7 +21,7 @@
             <div class="card h-100">
                 <div class="card-body">
                     <div class="stat-label">Today's entries</div>
-                    <div class="stat-value">{{ $todayEntries }}</div>
+                    <div class="stat-value" data-live-counter="todayEntries">{{ $todayEntries }}</div>
                 </div>
             </div>
         </div>
@@ -29,8 +29,26 @@
             <div class="card h-100">
                 <div class="card-body">
                     <div class="stat-label">Today's exits</div>
-                    <div class="stat-value">{{ $todayExits }}</div>
+                    <div class="stat-value" data-live-counter="todayExits">{{ $todayExits }}</div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4" data-live-feed data-live-kind="attendance" data-live-endpoint="{{ route('admin.attendance.live') }}" data-live-after="{{ $recentTaps->max('id') ?? 0 }}">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-broadcast-pin me-1"></i> Live RFID activity</span>
+            <span class="small text-muted-library"><span class="attendance-live">Updating</span> every 5s</span>
+        </div>
+        <div class="card-body py-2">
+            <div class="list-group list-group-flush" data-live-list>
+                @include('admin.attendance.partials.live-items', ['logs' => $recentTaps])
+                @if ($recentTaps->isEmpty())
+                    <div class="empty-state py-3" data-live-empty>
+                        <i class="bi bi-rss"></i>
+                        <div class="small">Waiting for the first card tap...</div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
