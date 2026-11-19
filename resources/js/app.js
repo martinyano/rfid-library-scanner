@@ -13,56 +13,63 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.querySelectorAll('[data-live-feed]').forEach((feed) => {
-        let after = Number(feed.dataset.liveAfter || 0);
-        let busy = false;
+        const endpoint = feed.dataset.liveEndpoint;
+        const list = feed.querySelector('[data-live-list]');
+        if (!endpoint || !list) return;
+
+        const seenExits = new Set();
 
         const poll = async () => {
-            if (busy || document.hidden) {
-                return;
+            const after = feed.dataset.liveAfter || 0;
+            const params = new URLSearchParams({
+                after: String(after),
+                seen_exits: Array.from(seenExits).join(','),
+            });
+
+            const res = await fetch(`${endpoint}?${params.toString()}`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+
+            if (Array.isArray(data.exitIds)) {
+                data.exitIds.forEach((id) => seenExits.add(Number(id)));
             }
 
-            busy = true;
-            try {
-                const response = await fetch(`${feed.dataset.liveEndpoint}?after=${after}`, {
-                    headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    credentials: 'same-origin',
-                });
+            if (data.html) {
+                const temp = document.createElement('div');
+                temp.innerHTML = data.html;
 
-                if (!response.ok) {
-                    return;
-                }
+                temp.querySelectorAll('[data-live-item]').forEach((incoming) => {
+                    const id = incoming.getAttribute('data-live-item');
+                    const existing = list.querySelector(`[data-live-item="${id}"]`);
 
-                const data = await response.json();
-                after = Math.max(after, Number(data.latestId || 0));
-                feed.dataset.liveAfter = String(after);
-
-                const list = feed.querySelector('[data-live-list]');
-                if (list && typeof data.html === 'string' && data.html.trim()) {
-                    list.querySelector('[data-live-empty]')?.remove();
-                    list.insertAdjacentHTML('afterbegin', data.html);
-
-                    const items = list.querySelectorAll('[data-live-item]');
-                    if (items.length > 12) {
-                        items[items.length - 1].remove();
-                    }
-                }
-
-                Object.entries(data.counters || {}).forEach(([key, value]) => {
-                    document.querySelectorAll(`[data-live-counter="${key}"]`).forEach((element) => {
-                        element.textContent = String(value);
+                    // Remove any accidental duplicates of this ID first
+                    list.querySelectorAll(`[data-live-item="${id}"]`).forEach((el) => {
+                        if (el !== existing) el.remove();
                     });
+
+                    if (existing) {
+                        existing.replaceWith(incoming);
+                    } else {
+                        list.querySelector('[data-live-empty]')?.remove();
+                        list.prepend(incoming);
+                    }
                 });
-            } catch {
-            } finally {
-                busy = false;
+            }
+
+            if (typeof data.latestId !== 'undefined') {
+                feed.dataset.liveAfter = data.latestId;
+            }
+
+            if (data.counters) {
+                Object.entries(data.counters).forEach(([key, value]) => {
+                    const el = document.querySelector(`[data-live-counter="${key}"]`);
+                    if (el) el.textContent = value;
+                });
             }
         };
 
-        window.setInterval(poll, 5000);
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                poll();
-            }
-        });
+        setInterval(poll, 5000);
     });
 });

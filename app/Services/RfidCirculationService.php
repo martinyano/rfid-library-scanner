@@ -54,10 +54,28 @@ class RfidCirculationService
             throw new CirculationException('Student account is inactive.', 403);
         }
 
-        $this->attendance->entry($student, 'kiosk', $ip, $userAgent);
+        $result = $this->attendance->toggle($student, 'kiosk', $ip, $userAgent);
+        $action = $result['action']; // 'entry' or 'exit'
+        $cacheKey = $this->cacheKey($deviceId, $ip);
+
+        if ($action === 'exit') {
+            Cache::forget($cacheKey);
+
+            return [
+                'status' => 'ok',
+                'action' => 'exit',
+                'next' => null,
+                'message' => 'Goodbye, '.$student->name.'. Your exit has been logged.',
+                'attendance' => 'exit',
+                'card_uid' => $student->rfid_uid,
+                'student' => $this->studentPayload($student),
+                'book' => null,
+                'due_at' => null,
+            ];
+        }
 
         Cache::put(
-            $this->cacheKey($deviceId, $ip),
+            $cacheKey,
             $student->id,
             now()->addSeconds($this->sessionSeconds())
         );
@@ -104,6 +122,8 @@ class RfidCirculationService
             throw new CirculationException('Student account is inactive.', 403);
         }
 
+        $attendanceState = $this->attendance->openFor($student) ? 'entry' : 'exit';
+
         $activeLoan = Borrowing::query()
             ->where('user_id', $student->id)
             ->where('book_copy_id', $copy->id)
@@ -120,7 +140,7 @@ class RfidCirculationService
                 'action' => 'return',
                 'next' => null,
                 'message' => 'Returned "'.$copy->book?->title.'" for '.$student->name.'.',
-                'attendance' => 'entry',
+                'attendance' => $attendanceState,
                 'card_uid' => $student->rfid_uid,
                 'student' => $this->studentPayload($student),
                 'book' => $this->bookPayload($copy),
@@ -144,7 +164,7 @@ class RfidCirculationService
             'action' => 'borrow',
             'next' => null,
             'message' => 'Borrowed "'.$copy->book?->title.'" for '.$student->name.'. Due '.$borrowing->due_at->format('M d, Y').'.',
-            'attendance' => 'entry',
+            'attendance' => $attendanceState,
             'card_uid' => $student->rfid_uid,
             'student' => $this->studentPayload($student),
             'book' => $this->bookPayload($copy),
