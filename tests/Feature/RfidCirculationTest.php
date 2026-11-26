@@ -60,7 +60,7 @@ class RfidCirculationTest extends TestCase
             ->assertJsonPath('book_uid', $copy->rfid_uid)
             ->assertJsonPath('due_at', today()->addDays(7)->toDateString());
 
-        $this->assertDatabaseHas('borrowings', [
+        $this->assertDatabaseHas('transactions', [
             'user_id' => $student->id,
             'book_id' => $book->id,
             'book_copy_id' => $copy->id,
@@ -79,7 +79,7 @@ class RfidCirculationTest extends TestCase
 
         $this->assertSame(BookCopy::STATUS_AVAILABLE, $copy->fresh()->status);
         $this->assertSame($book->total_copies, $book->fresh()->available_copies);
-        $this->assertDatabaseHas('borrowings', [
+        $this->assertDatabaseHas('transactions', [
             'user_id' => $student->id,
             'book_copy_id' => $copy->id,
             'status' => 'returned',
@@ -129,7 +129,7 @@ class RfidCirculationTest extends TestCase
         $this->scan($student->rfid_uid, 'kiosk-a')->assertOk();
 
         $this->scan($copy->rfid_uid, 'kiosk-b')->assertStatus(409);
-        $this->assertDatabaseMissing('borrowings', ['book_copy_id' => $copy->id]);
+        $this->assertDatabaseMissing('transactions', ['book_copy_id' => $copy->id]);
     }
 
     public function test_borrowing_respects_the_configured_limit(): void
@@ -150,7 +150,7 @@ class RfidCirculationTest extends TestCase
         $this->scan($student->rfid_uid)->assertOk();
         $this->scan($copy->rfid_uid)->assertStatus(409);
 
-        $this->assertDatabaseMissing('borrowings', ['book_copy_id' => $copy->id]);
+        $this->assertDatabaseMissing('transactions', ['book_copy_id' => $copy->id]);
     }
 
     public function test_tapping_a_copy_on_loan_to_another_student_is_rejected(): void

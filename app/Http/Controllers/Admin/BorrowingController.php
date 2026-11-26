@@ -112,7 +112,7 @@ class BorrowingController extends Controller
 
     public function show(Borrowing $borrowing)
     {
-        $borrowing->load(['user', 'book', 'copy', 'handledBy', 'transactions.handledBy']);
+        $borrowing->load(['user', 'book', 'copy', 'handledBy', 'penaltyHandledBy']);
 
         return view('admin.borrowings.show', compact('borrowing'));
     }

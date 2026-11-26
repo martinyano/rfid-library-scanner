@@ -36,7 +36,7 @@ class BorrowingTest extends TestCase
 
         $borrowing = Borrowing::query()->firstOrFail();
         $response->assertRedirect(route('admin.borrowings.show', $borrowing));
-        $this->assertDatabaseHas('borrowings', [
+        $this->assertDatabaseHas('transactions', [
             'user_id' => $student->id,
             'book_id' => $book->id,
             'student_rfid_uid' => $student->rfid_uid,
@@ -68,7 +68,7 @@ class BorrowingTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('borrow');
-        $this->assertDatabaseMissing('borrowings', [
+        $this->assertDatabaseMissing('transactions', [
             'user_id' => $student->id,
             'book_id' => $secondBook->id,
         ]);

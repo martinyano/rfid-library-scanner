@@ -75,29 +75,29 @@
                                 <div class="text-muted-library">{{ $transaction->user?->student_number }}</div>
                             </td>
                             <td class="small">
-                                <a href="{{ route('admin.borrowings.show', $transaction->borrowing) }}" class="text-dark">{{ Str::limit($transaction->borrowing?->book?->title ?? 'Deleted book', 40) }}</a>
+                                <a href="{{ route('admin.borrowings.show', $transaction) }}" class="text-dark">{{ Str::limit($transaction->book?->title ?? 'Deleted book', 40) }}</a>
                                 <div class="text-muted-library">
-                                    #{{ $transaction->borrowing_id }}
-                                    @if ($transaction->borrowing?->student_rfid_uid)<code>{{ $transaction->borrowing->student_rfid_uid }}</code>@endif
+                                    #{{ $transaction->id }}
+                                    @if ($transaction->student_rfid_uid)<code>{{ $transaction->student_rfid_uid }}</code>@endif
                                 </div>
-                                @if ($transaction->notes)
-                                    <div class="text-muted-library">{{ Str::limit($transaction->notes, 50) }}</div>
+                                @if ($transaction->penalty_notes)
+                                    <div class="text-muted-library">{{ Str::limit($transaction->penalty_notes, 50) }}</div>
                                 @endif
                             </td>
-                            <td class="fw-semibold small">{{ number_format($transaction->amount, 2) }}</td>
-                            <td><span class="badge {{ $transaction->status_badge }}">{{ $transaction->status_label }}</span></td>
+                            <td class="fw-semibold small">{{ number_format($transaction->penalty, 2) }}</td>
+                            <td><span class="badge {{ $transaction->penalty_status_badge }}">{{ $transaction->penalty_status_label }}</span></td>
                             <td class="small">
                                 {{ $transaction->created_at->format('M d, Y') }}
-                                <div class="text-muted-library">{{ $transaction->handledBy?->name ?? 'System' }}</div>
+                                <div class="text-muted-library">{{ $transaction->penaltyHandledBy?->name ?? 'System' }}</div>
                             </td>
                             <td class="text-end">
-                                @if ($transaction->status === 'unpaid')
+                                @if ($transaction->penalty_status === 'unpaid')
                                     <form method="POST" action="{{ route('admin.transactions.pay', $transaction) }}" onsubmit="return confirm('Mark this fine as paid?');">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-cash me-1"></i> Mark paid</button>
                                     </form>
                                 @else
-                                    <span class="small text-muted-library">{{ $transaction->paid_at?->format('M d, Y') }}</span>
+                                    <span class="small text-muted-library">{{ $transaction->penalty_paid_at?->format('M d, Y') }}</span>
                                 @endif
                             </td>
                         </tr>

@@ -39,11 +39,11 @@ class AdminNotificationService
     {
         $this->send(new LibraryNotification(
             title: 'Fine recorded',
-            message: 'A fine of '.$transaction->amount.' was recorded for '.($transaction->user?->name ?? 'a student').'.',
+            message: 'A fine of '.$transaction->penalty.' was recorded for '.($transaction->user?->name ?? 'a student').'.',
             icon: 'bi-cash-coin',
             tone: 'danger',
-            url: route('admin.borrowings.show', $transaction->borrowing_id),
-            meta: ['transaction_id' => $transaction->id, 'borrowing_id' => $transaction->borrowing_id],
+            url: route('admin.borrowings.show', $transaction->id),
+            meta: ['transaction_id' => $transaction->id, 'borrowing_id' => $transaction->id],
         ));
     }
 

@@ -120,7 +120,8 @@ class BorrowingService
         ?string $bookRfidUid = null,
     ): Borrowing {
         $borrowedAt = now();
-        $dueAt = today()->addDays($this->settings->int('borrow_days', 7));
+        $borrowDays = $this->settings->int('borrow_days', 7);
+        $dueAt = today()->addDays($borrowDays);
 
         $borrowing = Borrowing::query()->create([
             'user_id' => $student->id,
@@ -130,6 +131,7 @@ class BorrowingService
             'book_rfid_uid' => $bookRfidUid ?: $copy->rfid_uid,
             'borrowed_at' => $borrowedAt,
             'due_at' => $dueAt,
+            'days_to_return' => $borrowDays,
             'status' => 'borrowed',
         ]);
 
@@ -272,8 +274,13 @@ class BorrowingService
             throw ValidationException::withMessages(['borrowing' => 'Only active loans can be extended.']);
         }
 
+        $dueAt = $borrowing->due_at->copy()->addDays(max(1, $days));
+
         $borrowing->update([
-            'due_at' => $borrowing->due_at->copy()->addDays(max(1, $days)),
+            'due_at' => $dueAt,
+            'days_to_return' => $borrowing->borrowed_at
+                ? $borrowing->borrowed_at->copy()->startOfDay()->diffInDays($dueAt->copy()->startOfDay())
+                : $days,
             'due_soon_notified_at' => null,
             'overdue_notified_at' => null,
         ]);

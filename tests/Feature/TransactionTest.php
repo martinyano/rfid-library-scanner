@@ -36,10 +36,10 @@ class TransactionTest extends TestCase
             'notes' => 'Returned late',
         ])->assertRedirect();
 
-        $transaction = Transaction::query()->firstOrFail();
-        $this->assertSame('25.50', $transaction->amount);
-        $this->assertSame('unpaid', $transaction->status);
-        $this->assertSame($borrowing->id, $transaction->borrowing_id);
+        $transaction = Transaction::query()->findOrFail($borrowing->id);
+        $this->assertSame('25.50', $transaction->penalty);
+        $this->assertSame('unpaid', $transaction->penalty_status);
+        $this->assertSame('Returned late', $transaction->penalty_notes);
         $this->assertSame($student->id, $transaction->user_id);
         $this->assertDatabaseCount('notifications', 1);
     }
@@ -52,9 +52,9 @@ class TransactionTest extends TestCase
         $this->actingAs($admin)->post(route('admin.transactions.pay', $transaction))->assertRedirect();
 
         $transaction->refresh();
-        $this->assertSame('paid', $transaction->status);
-        $this->assertNotNull($transaction->paid_at);
-        $this->assertSame($admin->id, $transaction->handled_by_id);
+        $this->assertSame('paid', $transaction->penalty_status);
+        $this->assertNotNull($transaction->penalty_paid_at);
+        $this->assertSame($admin->id, $transaction->penalty_handled_by_id);
     }
 
     public function test_a_fine_cannot_be_recorded_for_a_loan_that_is_not_overdue(): void
@@ -66,13 +66,13 @@ class TransactionTest extends TestCase
             'amount' => 10,
         ])->assertSessionHasErrors('amount');
 
-        $this->assertDatabaseCount('transactions', 0);
+        $this->assertNull($borrowing->fresh()->penalty);
     }
 
     public function test_transaction_index_shows_recorded_fines(): void
     {
         $admin = User::factory()->admin()->create();
-        $transaction = Transaction::factory()->create(['amount' => 42]);
+        Transaction::factory()->create(['penalty' => 42]);
 
         $this->actingAs($admin)->get(route('admin.transactions.index'))
             ->assertOk()

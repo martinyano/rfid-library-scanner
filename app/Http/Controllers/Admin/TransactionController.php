@@ -14,8 +14,9 @@ class TransactionController extends Controller
     public function index(Request $request)
     {
         $transactions = Transaction::query()
-            ->with(['borrowing.book', 'user', 'handledBy'])
-            ->when(in_array($request->input('status'), ['unpaid', 'paid'], true), fn ($query) => $query->where('status', $request->input('status')))
+            ->with(['book', 'user', 'penaltyHandledBy'])
+            ->whereNotNull('penalty')
+            ->when(in_array($request->input('status'), ['unpaid', 'paid'], true), fn ($query) => $query->where('penalty_status', $request->input('status')))
             ->when($request->string('q')->trim()->toString(), function ($query, $q) {
                 $query->where(function ($query) use ($q) {
                     $query->whereHas('user', function ($query) use ($q) {
@@ -31,9 +32,9 @@ class TransactionController extends Controller
 
         return view('admin.transactions.index', [
             'transactions' => $transactions,
-            'unpaidCount' => Transaction::query()->unpaid()->count(),
-            'unpaidTotal' => (float) Transaction::query()->unpaid()->sum('amount'),
-            'paidTotal' => (float) Transaction::query()->paid()->sum('amount'),
+            'unpaidCount' => Transaction::query()->finesUnpaid()->count(),
+            'unpaidTotal' => (float) Transaction::query()->finesUnpaid()->sum('penalty'),
+            'paidTotal' => (float) Transaction::query()->finesPaid()->sum('penalty'),
         ]);
     }
 

@@ -68,7 +68,7 @@ flowchart LR
     P8([8.0 Settings Management])
     P9([9.0 Dashboard & Reporting])
     P10([10.0 Notifications])
-    P11([11.0 Fine Transactions])
+    P11([11.0 Fine Penalties])
     P12([12.0 Receipt Emails])
 
     %% Data stores
@@ -76,13 +76,12 @@ flowchart LR
     D2[(D2 authors)]
     D3[(D3 categories)]
     D4[(D4 books)]
-    D5[(D5 borrowings)]
+    D5[(D5 transactions)]
     D6[(D6 attendance_logs)]
     D7[(D7 settings)]
     D8[(D8 sessions / cache)]
     D9[(D9 cover-image storage)]
     D10[(D10 book_copies)]
-    D11[(D11 transactions)]
     D12[(D12 notifications)]
 
     %% Authentication and session
@@ -156,11 +155,11 @@ flowchart LR
     P12 -->|Send receipt email| E
     E -->|Receipt delivered| S
 
-    %% Fine transactions
+    %% Fine penalties
     A -->|Overdue fine amount and notes| P11
-    P11 -->|Create unpaid transaction| D11
+    P11 -->|Record unpaid penalty| D5
     A -->|Mark paid| P11
-    P11 -->|Update payment status| D11
+    P11 -->|Update penalty payment status| D5
     P11 -->|Fine-recorded alert| P10
 
     %% Notifications
@@ -183,7 +182,7 @@ flowchart LR
     P9 -->|Read students| D1
     P9 -->|Read loans| D5
     P9 -->|Read attendance| D6
-    P9 -->|Read transactions and fines| D11
+    P9 -->|Read transactions and penalties| D5
     P9 -->|Read settings| D7
     P9 -->|Dashboard, live attendance, live loans and reports| A
 ```
@@ -198,13 +197,12 @@ flowchart LR
 | D2 | authors | `authors` | id, name, bio |
 | D3 | categories | `categories` | id, name, description |
 | D4 | books | `books` | id, title, author_id → D2, category_id → D3, isbn, description, cover_image → D9, published_year, shelf_location, total_copies, available_copies (derived from D10), deleted_at |
-| D5 | borrowings | `borrowings` | id, user_id → D1, book_id → D4, book_copy_id → D10, student_rfid_uid, book_rfid_uid, borrowed_at, due_at, returned_at, status (borrowed/returned/lost/damaged), due_soon_notified_at, overdue_notified_at, handled_by_id → D1 |
+| D5 | transactions | `transactions` | id, user_id → D1, book_id → D4, book_copy_id → D10, student_rfid_uid, book_rfid_uid, borrowed_at, due_at, days_to_return, returned_at, penalty, penalty_status (unpaid/paid), penalty_notes, penalty_handled_by_id → D1, penalty_paid_at, status (borrowed/returned/lost/damaged), due_soon_notified_at, overdue_notified_at, handled_by_id → D1 |
 | D6 | attendance_logs | `attendance_logs` | id, user_id → D1, rfid_uid, entry_at, exit_at, source (api/kiosk), ip_address, user_agent, closed_automatically |
 | D7 | settings | `settings` | key, value — library_name, borrow_days, max_books, due_soon_days, auto_close_hours |
 | D8 | sessions / cache | `sessions` table, cache store | Session id, user_id, payload, last_activity; cached `library.settings`; pending kiosk student sessions `rfid.pending.*` |
 | D9 | cover-image storage | `storage/app/public/covers` | Uploaded book cover image files |
 | D10 | book_copies | `book_copies` | id, book_id → D4, rfid_uid (unique), status (available/borrowed/lost/damaged) |
-| D11 | transactions | `transactions` | id, borrowing_id → D5, user_id → D1, amount, status (unpaid/paid), notes, handled_by_id → D1, paid_at |
 | D12 | notifications | `notifications` | id, type, notifiable_type/id → D1, data, read_at |
 
 ---
@@ -221,9 +219,9 @@ flowchart LR
 | 6.0 RFID Circulation | Kiosk scan (`POST /api/rfid/circulation`): student card or book tag, device_id | Identify, borrow, or return result; entry log; pending session; failed-tap alert | D1, D4, D5, D6, D7, D8, D10, D12 |
 | 7.0 Reminder Service | Scheduled trigger, due-soon/overdue loans | Reminder emails, admin notifications, notified timestamps | D1, D4, D5, D7, D12 |
 | 8.0 Settings Management | Library settings form | Updated settings, cleared cache | D7, D8 |
-| 9.0 Dashboard & Reporting | Page/report requests, search filters, live-feed polls | Dashboards, live attendance and loans, fine totals, notification menu | D1, D4, D5, D6, D7, D10, D11, D12 |
+| 9.0 Dashboard & Reporting | Page/report requests, search filters, live-feed polls | Dashboards, live attendance and loans, fine totals, notification menu | D1, D4, D5, D6, D7, D10, D12 |
 | 10.0 Notifications | Due-soon, overdue, fine, failed-tap events | Admin notification records, unread badge, read status | D1, D12 |
-| 11.0 Fine Transactions | Admin-entered amount and notes, mark-paid action | Unpaid/paid fine records and totals | D1, D5, D11, D12 |
+| 11.0 Fine Penalties | Admin-entered amount and notes, mark-paid action | Unpaid/paid penalty fields on the loan transaction and totals | D1, D5, D12 |
 | 12.0 Receipt Emails | Borrow/return confirmation from admin or RFID circulation | Laravel Markdown borrow/return receipts sent to student email | D1, D5 |
 
 ---
@@ -234,7 +232,7 @@ flowchart LR
 - Student-facing pages and student login have been removed. Students are registered and deactivated by admins; cards identify them at the reader.
 - The kiosk flow is: tap the student card (logs entry only and opens a short pending session), then tap a book copy tag. Tapping a copy already on loan to that student returns it; otherwise the copy is borrowed. The exact card and book tag UIDs are snapshotted on the borrowing. Pending sessions are scoped by `device_id` (or client IP when omitted).
 - Lost and damaged copies remain in `book_copies` for records but are excluded from circulation counters.
-- Fines are not calculated automatically. Admins enter a fine amount on an overdue borrowing; the amount and payment status are stored in `transactions`.
+- Fines are not calculated automatically. Admins enter a fine amount on an overdue loan; the amount and payment status are stored in the `penalty*` columns of `transactions`.
 - Admins receive in-app database notifications for due-soon and overdue loans, recorded fines, and failed RFID taps. Laravel Markdown reminder emails are still sent to students.
 - Borrow and return transactions immediately send Laravel Markdown receipts to the student's email address. `borrowed_at` and `returned_at` are stored as datetimes so receipts can include the transaction time.
 - The RFID reader is an external system that authenticates with the `X-RFID-Key` header. `POST /api/rfid/scan` is the door entry/exit toggle; `POST /api/rfid/circulation` handles kiosk borrow/return. The Python bridge selects the endpoint with `RFID_MODE`.

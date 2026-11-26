@@ -5,11 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Borrowing extends Model
 {
     use HasFactory;
+
+    protected $table = 'transactions';
 
     protected $fillable = [
         'user_id',
@@ -19,7 +20,13 @@ class Borrowing extends Model
         'book_rfid_uid',
         'borrowed_at',
         'due_at',
+        'days_to_return',
         'returned_at',
+        'penalty',
+        'penalty_status',
+        'penalty_notes',
+        'penalty_handled_by_id',
+        'penalty_paid_at',
         'status',
         'notes',
         'due_soon_notified_at',
@@ -32,7 +39,10 @@ class Borrowing extends Model
         return [
             'borrowed_at' => 'datetime',
             'due_at' => 'date',
+            'days_to_return' => 'integer',
             'returned_at' => 'datetime',
+            'penalty' => 'decimal:2',
+            'penalty_paid_at' => 'datetime',
             'due_soon_notified_at' => 'datetime',
             'overdue_notified_at' => 'datetime',
         ];
@@ -58,9 +68,19 @@ class Borrowing extends Model
         return $this->belongsTo(User::class, 'handled_by_id');
     }
 
-    public function transactions(): HasMany
+    public function penaltyHandledBy(): BelongsTo
     {
-        return $this->hasMany(Transaction::class);
+        return $this->belongsTo(User::class, 'penalty_handled_by_id');
+    }
+
+    public function scopeFinesUnpaid($query)
+    {
+        return $query->whereNotNull('penalty')->where('penalty_status', 'unpaid');
+    }
+
+    public function scopeFinesPaid($query)
+    {
+        return $query->whereNotNull('penalty')->where('penalty_status', 'paid');
     }
 
     public function scopeActive($query)
@@ -71,6 +91,41 @@ class Borrowing extends Model
     public function scopeOverdue($query)
     {
         return $query->where('status', 'borrowed')->whereDate('due_at', '<', today());
+    }
+
+    public function getTransactionIdAttribute(): int
+    {
+        return $this->id;
+    }
+
+    public function getTransactionDateAttribute()
+    {
+        return $this->created_at;
+    }
+
+    public function getDateBorrowAttribute()
+    {
+        return $this->borrowed_at;
+    }
+
+    public function getDateReturnAttribute()
+    {
+        return $this->returned_at;
+    }
+
+    public function getHasPenaltyAttribute(): bool
+    {
+        return $this->penalty !== null;
+    }
+
+    public function getPenaltyStatusLabelAttribute(): string
+    {
+        return ucfirst($this->penalty_status ?? 'unpaid');
+    }
+
+    public function getPenaltyStatusBadgeAttribute(): string
+    {
+        return $this->penalty_status === 'paid' ? 'badge-soft-success' : 'badge-soft-danger';
     }
 
     public function getIsOverdueAttribute(): bool

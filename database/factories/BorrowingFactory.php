@@ -21,7 +21,13 @@ class BorrowingFactory extends Factory
             'book_id' => Book::factory(),
             'borrowed_at' => $borrowedAt,
             'due_at' => $borrowedAt->copy()->addDays(7),
+            'days_to_return' => 7,
             'returned_at' => null,
+            'penalty' => null,
+            'penalty_status' => 'unpaid',
+            'penalty_notes' => null,
+            'penalty_handled_by_id' => null,
+            'penalty_paid_at' => null,
             'status' => 'borrowed',
         ];
     }
@@ -39,6 +45,7 @@ class BorrowingFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'borrowed_at' => today()->subDays(12),
             'due_at' => today()->subDays(5),
+            'days_to_return' => 7,
         ]);
     }
 }

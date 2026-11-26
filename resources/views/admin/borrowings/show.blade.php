@@ -76,34 +76,35 @@
             </div>
 
             <div class="card mb-4">
-                <div class="card-header"><i class="bi bi-cash-coin me-1"></i> Overdue fines</div>
+                <div class="card-header"><i class="bi bi-cash-coin me-1"></i> Overdue fine</div>
                 <div class="card-body">
-                    <div class="list-group list-group-flush mb-3">
-                        @forelse ($borrowing->transactions as $transaction)
+                    @if ($borrowing->has_penalty)
+                        <div class="list-group list-group-flush mb-3">
                             <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center gap-2">
                                 <div>
-                                    <div class="fw-semibold small">{{ number_format($transaction->amount, 2) }}</div>
+                                    <div class="fw-semibold small">{{ number_format($borrowing->penalty, 2) }}</div>
                                     <div class="small text-muted-library">
-                                        {{ $transaction->created_at->format('M d, Y') }}
-                                        @if ($transaction->notes)&middot; {{ $transaction->notes }}@endif
+                                        {{ $borrowing->penalty_paid_at?->format('M d, Y') ?? $borrowing->created_at->format('M d, Y') }}
+                                        @if ($borrowing->penalty_notes)&middot; {{ $borrowing->penalty_notes }}@endif
                                     </div>
+                                    <div class="small text-muted-library">Handled by {{ $borrowing->penaltyHandledBy?->name ?? 'System' }}</div>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
-                                    <span class="badge {{ $transaction->status_badge }}">{{ $transaction->status_label }}</span>
-                                    @if ($transaction->status === 'unpaid')
-                                        <form method="POST" action="{{ route('admin.transactions.pay', $transaction) }}">
+                                    <span class="badge {{ $borrowing->penalty_status_badge }}">{{ $borrowing->penalty_status_label }}</span>
+                                    @if ($borrowing->penalty_status === 'unpaid')
+                                        <form method="POST" action="{{ route('admin.transactions.pay', $borrowing) }}">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-light border" title="Mark paid"><i class="bi bi-cash"></i></button>
                                         </form>
                                     @endif
                                 </div>
                             </div>
-                        @empty
-                            <div class="small text-muted-library py-2">No fines recorded for this loan.</div>
-                        @endforelse
-                    </div>
+                        </div>
+                    @else
+                        <div class="small text-muted-library py-2">No fine recorded for this loan.</div>
+                    @endif
 
-                    @if ($borrowing->due_at && $borrowing->due_at->lt(today()))
+                    @if ($borrowing->due_at && $borrowing->due_at->lt(today()) && ! $borrowing->has_penalty)
                         <form method="POST" action="{{ route('admin.borrowings.transactions.store', $borrowing) }}">
                             @csrf
                             <label for="amount" class="form-label small fw-semibold">Record a fine</label>

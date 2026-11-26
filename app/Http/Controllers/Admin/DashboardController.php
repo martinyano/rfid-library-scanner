@@ -25,8 +25,8 @@ class DashboardController extends Controller
             'studentCount' => User::query()->students()->count(),
             'activeSessions' => AttendanceLog::query()->open()->count(),
             'todayEntries' => AttendanceLog::query()->whereDate('entry_at', today())->count(),
-            'unpaidFines' => (float) Transaction::query()->unpaid()->sum('amount'),
-            'unpaidFineCount' => Transaction::query()->unpaid()->count(),
+            'unpaidFines' => (float) Transaction::query()->finesUnpaid()->sum('penalty'),
+            'unpaidFineCount' => Transaction::query()->finesUnpaid()->count(),
             'recentBorrowings' => Borrowing::query()
                 ->with(['user', 'book'])
                 ->latest('borrowed_at')
